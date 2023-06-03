@@ -57,13 +57,13 @@ func (g *Struct) generateEncoding(r *renderer.Go) {
 		s := g.src.Underlying().(*types.Struct)
 		for i := 0; i < s.NumFields(); i++ {
 			f := s.Field(i)
-			r.L(`// Encode $0($1).`, f.Name(), f.Type().String())
+			r.L(`// Encode $0($1).`, f.Name(), varTypeName(f))
 			h := g.hands[f]
 
 			rr := r.Scope()
 			rr.Let("src", g.argName+"."+f.Name())
 			rr.Let("dst", "dst")
-			rr.Let("dstType", f.Type().String())
+			rr.Let("dstType", varTypeName(f))
 			h.Encoding(rr, "dst", g.argName+"."+f.Name())
 			r.N()
 		}
@@ -85,10 +85,10 @@ func (g *Struct) generateDecoding(r *renderer.Go) {
 			f := s.Field(i)
 			h := g.hands[f]
 
-			r.L(`// Decode $0($1).`, f.Name(), f.Type().String())
+			r.L(`// Decode $0($1).`, f.Name(), varTypeName(f))
 			rr := r.Scope()
 			rr.Let("dst", g.argName+"."+f.Name())
-			rr.Let("dstType", f.Type().String())
+			rr.Let("dstType", varTypeName(f))
 			rr.Let("src", "src")
 			h.Decoding(rr, g.argName+"."+f.Name(), "src")
 			r.N()
@@ -103,4 +103,14 @@ func (g *Struct) generateDecoding(r *renderer.Go) {
 		r.N()
 		r.L(`return nil`)
 	})
+}
+
+func varTypeName(v *types.Var) string {
+	n := v.Type().String()
+	lastIndex := strings.LastIndexByte(n, '/')
+	if lastIndex < 0 {
+		return n
+	}
+
+	return n[lastIndex+1:]
 }
