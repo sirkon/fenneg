@@ -1,0 +1,2 @@
+BytesArray = ^'[' Size(int) "]byte"$;
+
