@@ -116,7 +116,12 @@ func (c *commandStruct) checkStruct(
 			continue
 		}
 
-		ctx.handlers.Handler(f)
+		if ctx.handlers.Handler(f) == nil {
+			log.Pos(f.Pos(), errors.New("unsupported type").Stg("unsupported-type", f.Type()))
+			success = false
+			continue
+		}
+
 		aliases[f] = l.digForAliases(pkg, f)
 	}
 	ctx.handlers.setArgsAliases(aliases)

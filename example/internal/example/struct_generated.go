@@ -10,11 +10,11 @@ import (
 
 // StructEncode encodes content of Struct.
 func StructEncode(dst []byte, s *Struct) []byte {
-	// Encode ID(github.com/sirkon/fenneg/example/internal/example.Index).
+	// Encode ID(Index).
 	dst = binary.LittleEndian.AppendUint64(dst, s.ID.Term)
 	dst = binary.LittleEndian.AppendUint64(dst, s.ID.Index)
 
-	// Encode ChangeID(github.com/sirkon/fenneg/example/internal/example.Index).
+	// Encode ChangeID(Index).
 	dst = binary.LittleEndian.AppendUint64(dst, s.ChangeID.Term)
 	dst = binary.LittleEndian.AppendUint64(dst, s.ChangeID.Index)
 
@@ -33,31 +33,35 @@ func StructEncode(dst []byte, s *Struct) []byte {
 
 // StructEncode decodes content of Struct.
 func StructDecode(s *Struct, src []byte) error {
-	// Decode ID(github.com/sirkon/fenneg/example/internal/example.Index).
+	// Decode ID(Index).
 	if len(src) < 16 {
-		return errors.New("decode s.ID(github.com/sirkon/fenneg/example/internal/example.Index): record buffer is too small").Uint64("length-required", uint64(16)).Int("length-actual", len(src))
+		return errors.New("decode s.ID(Index): record buffer is too small").Uint64("length-required", uint64(16)).Int("length-actual", len(src))
 	}
 	s.ID.Term = binary.LittleEndian.Uint64(src)
 	s.ID.Index = binary.LittleEndian.Uint64(src[8:])
+	src = src[16:]
 
-	// Decode ChangeID(github.com/sirkon/fenneg/example/internal/example.Index).
+	// Decode ChangeID(Index).
 	if len(src) < 16 {
-		return errors.New("decode s.ChangeID(github.com/sirkon/fenneg/example/internal/example.Index): record buffer is too small").Uint64("length-required", uint64(16)).Int("length-actual", len(src))
+		return errors.New("decode s.ChangeID(Index): record buffer is too small").Uint64("length-required", uint64(16)).Int("length-actual", len(src))
 	}
 	s.ChangeID.Term = binary.LittleEndian.Uint64(src)
 	s.ChangeID.Index = binary.LittleEndian.Uint64(src[8:])
+	src = src[16:]
 
 	// Decode Repeat(uint32).
 	if len(src) < 4 {
 		return errors.New("decode s.Repeat(uint32): record buffer is too small").Uint64("length-required", uint64(4)).Int("length-actual", len(src))
 	}
 	s.Repeat = binary.LittleEndian.Uint32(src)
+	src = src[4:]
 
 	// Decode Theme(uint32).
 	if len(src) < 4 {
 		return errors.New("decode s.Theme(uint32): record buffer is too small").Uint64("length-required", uint64(4)).Int("length-actual", len(src))
 	}
 	s.Theme = binary.LittleEndian.Uint32(src)
+	src = src[4:]
 
 	// Decode Data([]byte).
 	{
