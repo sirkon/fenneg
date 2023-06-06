@@ -3,13 +3,6 @@ Flat encoding code generation for Go.
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/sirkon/fenneg.svg)](https://pkg.go.dev/github.com/sirkon/fenneg)
 
-![fenneg](./fenneg.png)
-
-Table of Contents
-=================
-
-* [fenneg](#fenneg)
-* [Table of contents](#table-of-contents)
 * [Installation\.](#installation)
 * [What it is about\.](#what-it-is-about)
     * [How the final utility is expected to work\.](#how-the-final-utility-is-expected-to-work)
@@ -17,9 +10,11 @@ Table of Contents
     * [Auto\-supported types\.](#auto-supported-types)
     * [Custom types\.](#custom-types)
     * [LogRecorder code generation details\.](#logrecorder-code-generation-details)
+* [Not just log encoding\.](#not-just-log-encoding)
 * [Usage example\.](#usage-example)
 * [IMPORTANT: Binary compatibility details\.](#important-binary-compatibility-details)
 * [TODO](#todo)
+
 
 
 
@@ -30,6 +25,18 @@ go get github.com/sirkon/fenneg
 ```
 
 # What it is about.
+
+It helps to create compact and performant binary encoding and decoding for:
+
+- Operation logs.
+- Structures.
+
+This library can be used to create both standalone utilities with CLI or using runners like it is done
+in the [example](./example/main.go). Beware though it is not recommended to use this library as a dependency
+of your projects directly. An approach with some inner module of your project that will generate
+things is preferable, something placed in `internal/tools/`.:q
+
+# Operation logs.
 
 Imagine we have some KV storage. This means we have a snapshot and an operations log with operations records:
 
@@ -182,7 +189,7 @@ graph TD
     encd --> stor %% Relies on user defined method.
 ```
 
-# Not just log encoding.
+# Structures binary flat encoding and decoding.
 
 Log encoding/decoding was an original reason to develop this library for, but it turned out
 soon I also have something similar for structs too. So, the library was extended to handle them

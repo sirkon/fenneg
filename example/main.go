@@ -8,9 +8,9 @@ import (
 	"github.com/sirkon/message"
 )
 
-func main() {
-	const appName = "test"
+const examplePkg = "github.com/sirkon/fenneg/example/internal/example"
 
+func main() {
 	hnlrs, err := fenneg.NewTypesHandlers(
 		// Add custom handler for the example.Index type
 		fenneg.NewTypeHandler(
@@ -47,16 +47,15 @@ func main() {
 		message.Fatal(errors.Wrap(err, "setup codegen runner"))
 	}
 
-	examplePkg := "github.com/sirkon/fenneg/example/internal/example"
 	if err := r.OpLog().
 		Source(examplePkg, "Source").
 		Type(examplePkg, "TypeRecorder").
 		LengthPrefix(true).
 		Run(); err != nil {
-		message.Critical(errors.Wrap(err, "generate oplog"))
+		message.Critical(errors.Wrap(err, "process oplog"))
 	}
 
 	if err := r.Struct(examplePkg, "Struct"); err != nil {
-		message.Critical(errors.Wrap(err, "generate struct"))
+		message.Critical(errors.Wrap(err, "process struct"))
 	}
 }
