@@ -2,7 +2,6 @@ package main
 
 import (
 	"go/types"
-	"os"
 
 	"github.com/sirkon/errors"
 	"github.com/sirkon/fenneg"
@@ -43,30 +42,21 @@ func main() {
 		message.Critical(errors.Wrap(err, "set up type handlers"))
 	}
 
-	// This is just for example of course, do not overwrite like this
-	// in your code for a general purpose utility.
-	// It is OK though to write like this for something really specific
-	// what is not needed anywhere else.
-	//
-	// Here we take Source interface and render methods for TypeRecorder.
-	os.Args = []string{
-		appName,
-		"op-log",
-		"-l", // Need to generate uvarint length prefix first.
-		"github.com/sirkon/fenneg/example/internal/example:Source",
-		"github.com/sirkon/fenneg/example/internal/example:TypeRecorder",
+	r, err := fenneg.NewRunner("github.com/sirkon/errors", hnlrs)
+	if err != nil {
+		message.Fatal(errors.Wrap(err, "setup codegen runner"))
 	}
 
-	if err := fenneg.Run(appName, hnlrs); err != nil {
-		message.Critical(errors.Wrap(err, "generate oplog thing"))
+	examplePkg := "github.com/sirkon/fenneg/example/internal/example"
+	if err := r.OpLog().
+		Source(examplePkg, "Source").
+		Type(examplePkg, "TypeRecorder").
+		LengthPrefix(true).
+		Run(); err != nil {
+		message.Critical(errors.Wrap(err, "generate oplog"))
 	}
 
-	os.Args = []string{
-		appName,
-		"struct",
-		"github.com/sirkon/fenneg/example/internal/example:Struct",
-	}
-	if err := fenneg.Run(appName, hnlrs); err != nil {
-		message.Critical(errors.Wrap(err, "generate struct thing"))
+	if err := r.Struct(examplePkg, "Struct"); err != nil {
+		message.Critical(errors.Wrap(err, "generate struct"))
 	}
 }
