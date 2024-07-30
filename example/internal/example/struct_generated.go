@@ -28,6 +28,10 @@ func StructEncode(dst []byte, s *Struct) []byte {
 	dst = binary.AppendUvarint(dst, uint64(len(s.Data)))
 	dst = append(dst, s.Data...)
 
+	// Encode Field(string).
+	dst = binary.AppendUvarint(dst, uint64(len(s.Field)))
+	dst = append(dst, s.Field...)
+
 	return dst
 }
 
@@ -77,6 +81,23 @@ func StructDecode(s *Struct, src []byte) error {
 			return errors.New("decode s.Data([]byte) content: record buffer is too small").Uint64("length-required", uint64(size)).Int("length-actual", len(src))
 		}
 		s.Data = src[:size]
+		src = src[size:]
+	}
+
+	// Decode Field(string).
+	{
+		size, off := binary.Uvarint(src)
+		if off <= 0 {
+			if off == 0 {
+				return errors.New("decode s.Field(string) length: record buffer is too small")
+			}
+			return errors.New("decode s.Field(string) length: malformed uvarint sequence")
+		}
+		src = src[off:]
+		if int(size) > len(src) {
+			return errors.New("decode s.Field(string) content: record buffer is too small").Uint64("length-required", uint64(int(size))).Int("length-actual", len(src))
+		}
+		s.Field = string(src[:size])
 		src = src[size:]
 	}
 

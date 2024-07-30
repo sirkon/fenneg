@@ -132,6 +132,12 @@ This kind of customization is a reason why this thing is a framework rather than
 | `[]byte`       |
 | `[][]byte`     |
 | `string`       |
+| `[]int16`      |
+| `[]int32`      |
+| `[]int64`      |
+| `[]uint16`     |
+| `[]uint32`     |
+| `[]uint64`     |
 
 Here:
 

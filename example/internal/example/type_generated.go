@@ -173,7 +173,7 @@ func TypeRecorderDispatch(disp Source, rec []byte) error {
 				return errors.New("decode Vars.a(string) length: malformed uvarint sequence")
 			}
 			rec = rec[off:]
-			if int(size) >= len(rec) {
+			if int(size) > len(rec) {
 				return errors.New("decode Vars.a(string) content: record buffer is too small").Uint64("length-required", uint64(int(size))).Int("length-actual", len(rec))
 			}
 			a = string(rec[:size])

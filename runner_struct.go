@@ -14,8 +14,52 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+type options struct {
+	FileSuffix    string
+	StructPointer bool
+	EncoderName   string
+	DecoderName   string
+}
+
+type Option func(opts *options)
+
+func WithFileSuffix(f string) Option {
+	return func(opt *options) {
+		if f != "" {
+			opt.FileSuffix = f
+		}
+	}
+}
+
+func StructPointer() Option {
+	return func(opt *options) {
+		opt.StructPointer = true
+	}
+}
+
+func WithEncoderName(e string) Option {
+	return func(opt *options) {
+		opt.EncoderName = e
+	}
+}
+
+func WithDecoderName(d string) Option {
+	return func(opt *options) {
+		opt.DecoderName = d
+	}
+}
+
 // Struct run struct generator.
-func (r *Runner) Struct(pkg, typ string) error {
+func (r *Runner) Struct(pkg, typ string, optsFn ...Option) error {
+	opts := &options{
+		FileSuffix:  "generated",
+		EncoderName: "Encode",
+		DecoderName: "Decode",
+	}
+	for _, opt := range optsFn {
+		opt(opts)
+	}
+
 	loader := newSouceLoader(r.fset)
 	p, err := loader.loadPkg(pkg)
 	if err != nil {
@@ -66,14 +110,14 @@ func (r *Runner) Struct(pkg, typ string) error {
 		return errors.Wrap(err, "set up rendering package")
 	}
 	_, file := filepath.Split(r.fset.Position(tn.Obj().Pos()).Filename)
-	rr := rpkg.Go(strings.TrimSuffix(file, ".go")+"_generated.go", gogh.Autogen(app.Name))
+	rr := rpkg.Go(strings.TrimSuffix(file, ".go")+"_"+strings.ToLower(opts.FileSuffix)+".go", gogh.Autogen(app.Name))
 
 	manhands := map[*types.Var]handlers.Type{}
 	for i := 0; i < s.NumFields(); i++ {
 		f := s.Field(i)
 		manhands[f] = r.handlers.Handler(f)
 	}
-	g := generator.NewStruct(rr, tn, manhands)
+	g := generator.NewStruct(rr, tn, manhands, opts.StructPointer, opts.EncoderName, opts.DecoderName)
 
 	g.Generate()
 
