@@ -6,4 +6,5 @@ type Struct struct {
 	Repeat   uint32
 	Theme    uint32
 	Data     []byte
+	Field    string
 }

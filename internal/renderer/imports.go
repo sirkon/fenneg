@@ -25,7 +25,7 @@ func (i *Imports) Module(relpath string) *gogh.ImportAliasControl {
 	return i.imp.Module(relpath)
 }
 
-// Imports дto implement gogh.Importer
+// Imports to implement gogh.Importer
 func (i *Imports) Imports() *gogh.Imports {
 	return i.imp
 }

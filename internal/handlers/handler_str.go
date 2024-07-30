@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"github.com/sirkon/gogh"
 	"github.com/sirkon/fenneg/internal/er"
 	"github.com/sirkon/fenneg/internal/renderer"
+	"github.com/sirkon/gogh"
 )
 
 // StringHandler handles string type.
@@ -60,7 +60,7 @@ func (b *StringHandler) Decoding(r *renderer.Go, dst, src string) bool {
 	er.Return().New("$decode length: $malformedUvarint").Rend(r)
 	r.L(`    }`)
 	r.L(`    $src = $src[$off:]`)
-	r.L(`    if int($siz) >= len($src) {`)
+	r.L(`    if int($siz) > len($src) {`)
 	er.Return().New("$decode content: $recordTooSmall").LenReq("int($siz)").LenSrc().Rend(r)
 	r.L(`    }`)
 	r.L(`    $dst = string($src[:$siz])`)

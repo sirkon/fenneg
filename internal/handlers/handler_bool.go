@@ -43,8 +43,6 @@ func (Bool) Decoding(r *renderer.Go, dst, src string) bool {
 	r.L(`}`)
 	r.L(`if $src[0] != 0 {`)
 	r.L(`    $dst = true`)
-	r.L(`} else {`)
-	r.L(`    $dst = false`)
 	r.L(`}`)
 
 	return false

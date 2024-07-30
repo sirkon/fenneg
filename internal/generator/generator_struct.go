@@ -15,11 +15,16 @@ func NewStruct(
 	r *renderer.Go,
 	src *types.Named,
 	hands map[*types.Var]handlers.Type,
+	pointer bool,
+	encoderName, decoderName string,
 ) *Struct {
 	return &Struct{
-		r:     r,
-		src:   src,
-		hands: hands,
+		r:           r,
+		src:         src,
+		hands:       hands,
+		pointer:     pointer,
+		encoderName: encoderName,
+		decoderName: decoderName,
 	}
 }
 
@@ -30,6 +35,9 @@ type Struct struct {
 	argName string
 	src     *types.Named
 	hands   map[*types.Var]handlers.Type
+
+	pointer                  bool
+	encoderName, decoderName string
 }
 
 // Generate struct flat encoding/decoding.
@@ -45,15 +53,26 @@ func (g *Struct) Generate() {
 
 func (g *Struct) generateEncoding(r *renderer.Go) {
 	r = r.Scope()
-	r.L(`// $0 encodes content of $1.`, gogh.Public(g.src.Obj().Name(), "Encode"), r.Type(g.src))
-	r.F(
-		gogh.Public(g.src.Obj().Name(), "Encode"),
-	)(
-		"dst",
-		"[]byte",
-		g.argName,
-		"*"+r.Type(g.src),
-	).Returns("[]byte").Body(func(r *renderer.Go) {
+	var fnR *gogh.GoFuncRenderer[*renderer.Imports]
+	if g.pointer {
+		r.L(`// $0 encodes content of $1.`, g.encoderName, r.Type(g.src))
+		fnR = r.M(g.argName, "*"+r.Type(g.src))(g.encoderName)("dst", "[]byte")
+	} else {
+		fnR = r.F(
+			gogh.Public(g.src.Obj().Name(), g.encoderName),
+		)(
+			"dst",
+			"[]byte",
+			g.argName,
+			"*"+r.Type(g.src),
+		)
+	}
+
+	fnR.Returns("[]byte").Body(func(r *renderer.Go) {
+		r.L(`if $0 == nil {`, g.argName)
+		r.L(`	return dst`)
+		r.L(`}`)
+		r.N()
 		s := g.src.Underlying().(*types.Struct)
 		for i := 0; i < s.NumFields(); i++ {
 			f := s.Field(i)
@@ -73,13 +92,21 @@ func (g *Struct) generateEncoding(r *renderer.Go) {
 
 func (g *Struct) generateDecoding(r *renderer.Go) {
 	r = r.Scope()
-	r.L(`// $0 decodes content of $1.`, gogh.Public(g.src.Obj().Name(), "Encode"), r.Type(g.src))
-	r.F(gogh.Public(g.src.Obj().Name(), "Decode"))(
-		g.argName,
-		"*"+r.Type(g.src),
-		"src",
-		"[]byte",
-	).Returns("error").Body(func(r *renderer.Go) {
+	var fnR *gogh.GoFuncRenderer[*renderer.Imports]
+	if g.pointer {
+		r.L(`// $0 decodes content of $1.`, g.decoderName, r.Type(g.src))
+		fnR = r.M(g.argName, "*"+r.Type(g.src))(g.decoderName)("src", "[]byte")
+	} else {
+		r.L(`// $0 decodes content of $1.`, gogh.Public(g.src.Obj().Name(), "Encode"), r.Type(g.src))
+		fnR = r.F(gogh.Public(g.src.Obj().Name(), g.decoderName))(
+			g.argName,
+			"*"+r.Type(g.src),
+			"src",
+			"[]byte",
+		)
+	}
+
+	fnR.Returns("err", "error").Body(func(r *renderer.Go) {
 		s := g.src.Underlying().(*types.Struct)
 		for i := 0; i < s.NumFields(); i++ {
 			f := s.Field(i)

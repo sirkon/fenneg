@@ -174,6 +174,24 @@ func init() {
 		"string": func() TypeHandler {
 			return &handlers.StringHandler{}
 		},
+		"[]int16": func() TypeHandler {
+			return handlers.NewSliceInt16()
+		},
+		"[]int32": func() TypeHandler {
+			return handlers.NewSliceInt32()
+		},
+		"[]int64": func() TypeHandler {
+			return handlers.NewSliceInt64()
+		},
+		"[]uint16": func() TypeHandler {
+			return handlers.NewSliceUint16()
+		},
+		"[]uint32": func() TypeHandler {
+			return handlers.NewSliceUint32()
+		},
+		"[]uint64": func() TypeHandler {
+			return handlers.NewSliceUint64()
+		},
 	}
 
 	builtinHandlingSupport = append(builtinHandlingSupport,
