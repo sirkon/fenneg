@@ -6,10 +6,34 @@ import (
 	"encoding/binary"
 
 	"github.com/sirkon/errors"
+	"github.com/sirkon/varsize"
 )
 
-// StructEncode encodes content of Struct.
+func StructLen(s *Struct) int {
+	if s == nil {
+		return 0
+	}
+
+	// len ID(Index).
+	// len ChangeID(Index).
+	// len Repeat(uint32).
+	// len Theme(uint32).
+	// len Data([]byte).
+	// len Field(string).
+
+	lenData := varsize.Len(s.Data) + len(s.Data)
+	lenField := varsize.Uint(uint(len(s.Field))) + len(s.Field)
+
+	return 16 + 16 + 4 + 4 + lenData + lenField
+}
 func StructEncode(dst []byte, s *Struct) []byte {
+	if s == nil {
+		return dst
+	}
+	if dst == nil {
+		dst = make([]byte, 0, StructLen(s))
+	}
+
 	// Encode ID(Index).
 	dst = binary.LittleEndian.AppendUint64(dst, s.ID.Term)
 	dst = binary.LittleEndian.AppendUint64(dst, s.ID.Index)
@@ -36,7 +60,7 @@ func StructEncode(dst []byte, s *Struct) []byte {
 }
 
 // StructEncode decodes content of Struct.
-func StructDecode(s *Struct, src []byte) error {
+func StructDecode(s *Struct, src []byte) (err error) {
 	// Decode ID(Index).
 	if len(src) < 16 {
 		return errors.New("decode s.ID(Index): record buffer is too small").Uint64("length-required", uint64(16)).Int("length-actual", len(src))
