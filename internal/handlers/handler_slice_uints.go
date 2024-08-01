@@ -1,48 +1,56 @@
 package handlers
 
 import (
+	"github.com/sirkon/gogh"
 	"strconv"
 
 	"github.com/sirkon/fenneg/internal/er"
 	"github.com/sirkon/fenneg/internal/renderer"
 )
 
-func NewSliceUint16() SliceUint {
-	return SliceUint{16}
+func NewSliceUint16() *SliceUint {
+	return &SliceUint{bits: 16}
 }
 
-func NewSliceUint32() SliceUint {
-	return SliceUint{32}
+func NewSliceUint32() *SliceUint {
+	return &SliceUint{bits: 32}
 }
 
-func NewSliceUint64() SliceUint {
-	return SliceUint{64}
+func NewSliceUint64() *SliceUint {
+	return &SliceUint{bits: 64}
 }
 
 type SliceUint struct {
-	bits int
+	bits   int
+	lenkey string
 }
 
 // Name to implement TypeHandler.
-func (i SliceUint) Name(*renderer.Go) string {
+func (i *SliceUint) Name(*renderer.Go) string {
 	return "[]uint" + strconv.Itoa(i.bits)
 }
 
 // Pre to implement TypeHandler.
-func (i SliceUint) Pre(r *renderer.Go, src string) {}
+func (i *SliceUint) Pre(r *renderer.Go, src string) {
+	key := gogh.Private("len", src)
+	uniq := r.Uniq(key)
+	r.Imports().Varsize().Ref("vsize")
+	r.L(`$0 := $vsize.Len($src) + len($src) * $1`, uniq, i.elemBytes())
+	i.lenkey = uniq
+}
 
 // Len to implement TypeHandler.
-func (i SliceUint) Len() int {
-	return i.bytes()
+func (i *SliceUint) Len() int {
+	return -1
 }
 
 // LenExpr to implement TypeHandler.
-func (i SliceUint) LenExpr(r *renderer.Go, src string) string {
-	return strconv.Itoa(i.bytes())
+func (i *SliceUint) LenExpr(r *renderer.Go, src string) string {
+	return i.lenkey
 }
 
 // Encoding to implement TypeHandler.
-func (i SliceUint) Encoding(r *renderer.Go, dst, src string) {
+func (i *SliceUint) Encoding(r *renderer.Go, dst, src string) {
 	r.Imports().Binary().Ref("bin")
 	r.L(`$dst = $bin.AppendUvarint($dst, uint64(len($src)))`)
 	r.L(`for i := range $src {`)
@@ -51,7 +59,7 @@ func (i SliceUint) Encoding(r *renderer.Go, dst, src string) {
 }
 
 // Decoding to implement TypeHandler.
-func (i SliceUint) Decoding(r *renderer.Go, dst, src string) bool {
+func (i *SliceUint) Decoding(r *renderer.Go, dst, src string) bool {
 	off := r.Uniq("off")
 	siz := r.Uniq("size")
 	r.Imports().Binary().Ref("bin")
@@ -59,7 +67,7 @@ func (i SliceUint) Decoding(r *renderer.Go, dst, src string) bool {
 	r.Let("siz", siz)
 	r.Let("off", off)
 	r.Let("bits", i.bits)
-	r.Let("len", i.bytes())
+	r.Let("len", i.elemBytes())
 
 	r.L(`{`)
 	r.L(`    $siz, $off := $bin.Uvarint($src)`)
@@ -85,6 +93,6 @@ func (i SliceUint) Decoding(r *renderer.Go, dst, src string) bool {
 	return true
 }
 
-func (i SliceUint) bytes() int {
+func (i *SliceUint) elemBytes() int {
 	return i.bits >> 3
 }

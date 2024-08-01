@@ -112,8 +112,6 @@ func TypeRecorderDispatch(disp Source, rec []byte) error {
 		}
 		if rec[0] != 0 {
 			a = true
-		} else {
-			a = false
 		}
 		rec = rec[1:]
 

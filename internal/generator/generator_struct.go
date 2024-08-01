@@ -8,6 +8,7 @@ import (
 	"github.com/sirkon/fenneg/internal/handlers"
 	"github.com/sirkon/fenneg/internal/renderer"
 	"github.com/sirkon/gogh"
+	"github.com/sirkon/message"
 )
 
 // NewStruct constructs Struct instance.
@@ -16,7 +17,7 @@ func NewStruct(
 	src *types.Named,
 	hands map[*types.Var]handlers.Type,
 	pointer bool,
-	encoderName, decoderName string,
+	encoderName, decoderName, sizeName string,
 ) *Struct {
 	return &Struct{
 		r:           r,
@@ -25,6 +26,7 @@ func NewStruct(
 		pointer:     pointer,
 		encoderName: encoderName,
 		decoderName: decoderName,
+		sizeName:    sizeName,
 	}
 }
 
@@ -38,6 +40,7 @@ type Struct struct {
 
 	pointer                  bool
 	encoderName, decoderName string
+	sizeName                 string
 }
 
 // Generate struct flat encoding/decoding.
@@ -47,8 +50,57 @@ func (g *Struct) Generate() {
 		g.argName = strings.ToLower(string(name[0]))
 	}
 
+	g.generateLen(g.r)
 	g.generateEncoding(g.r)
 	g.generateDecoding(g.r)
+}
+
+func (g *Struct) generateLen(r *renderer.Go) {
+	r = r.Scope()
+	var fnR *gogh.GoFuncRenderer[*renderer.Imports]
+	if g.pointer {
+		r.L(`// $0 calculate the size of the $1 fields for encoding in bytes.`, g.sizeName, r.Type(g.src))
+		fnR = r.M(g.argName, "*"+r.Type(g.src))(g.sizeName)()
+	} else {
+		fnR = r.F(
+			gogh.Public(g.src.Obj().Name(), g.sizeName),
+		)(
+			g.argName,
+			"*"+r.Type(g.src),
+		)
+	}
+
+	fnR.Returns("int").Body(func(r *renderer.Go) {
+		r.L(`if $0 == nil {`, g.argName)
+		r.L(`	return 0`)
+		r.L(`}`)
+		r.N()
+		s := g.src.Underlying().(*types.Struct)
+
+		for i := 0; i < s.NumFields(); i++ {
+			f := s.Field(i)
+			r.L(`// len $0($1).`, f.Name(), r.T().Type(f.Type()))
+		}
+		r.N()
+
+		lens := make([]string, 0, s.NumFields())
+		for i := 0; i < s.NumFields(); i++ {
+			f := s.Field(i)
+			h := g.hands[f]
+
+			lr := r.Scope()
+			lr.Let("src", g.argName+"."+f.Name())
+			h.Pre(lr, f.Name())
+			lenExpr := h.LenExpr(lr, "src")
+			if lenExpr != "" {
+				lens = append(lens, lenExpr)
+			} else {
+				message.Warningf("field %s has no len expression", f.Name())
+			}
+		}
+		r.N()
+		r.L(`return $0`, strings.Join(lens, " + "))
+	})
 }
 
 func (g *Struct) generateEncoding(r *renderer.Go) {
@@ -71,6 +123,13 @@ func (g *Struct) generateEncoding(r *renderer.Go) {
 	fnR.Returns("[]byte").Body(func(r *renderer.Go) {
 		r.L(`if $0 == nil {`, g.argName)
 		r.L(`	return dst`)
+		r.L(`}`)
+		r.L(`if dst == nil {`, g.argName)
+		if g.pointer {
+			r.L(`	dst = make([]byte, 0, $0.$1())`, g.argName, g.sizeName)
+		} else {
+			r.L(`	dst = make([]byte, 0, $0($1))`, gogh.Public(g.src.Obj().Name(), g.sizeName), g.argName)
+		}
 		r.L(`}`)
 		r.N()
 		s := g.src.Underlying().(*types.Struct)

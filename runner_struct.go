@@ -19,6 +19,7 @@ type options struct {
 	StructPointer bool
 	EncoderName   string
 	DecoderName   string
+	SizeName      string
 }
 
 type Option func(opts *options)
@@ -39,13 +40,25 @@ func StructPointer() Option {
 
 func WithEncoderName(e string) Option {
 	return func(opt *options) {
-		opt.EncoderName = e
+		if e != "" {
+			opt.EncoderName = e
+		}
 	}
 }
 
 func WithDecoderName(d string) Option {
 	return func(opt *options) {
-		opt.DecoderName = d
+		if d != "" {
+			opt.DecoderName = d
+		}
+	}
+}
+
+func WithSizeName(siz string) Option {
+	return func(opt *options) {
+		if siz != "" {
+			opt.SizeName = siz
+		}
 	}
 }
 
@@ -55,6 +68,7 @@ func (r *Runner) Struct(pkg, typ string, optsFn ...Option) error {
 		FileSuffix:  "generated",
 		EncoderName: "Encode",
 		DecoderName: "Decode",
+		SizeName:    "Len",
 	}
 	for _, opt := range optsFn {
 		opt(opts)
@@ -117,7 +131,9 @@ func (r *Runner) Struct(pkg, typ string, optsFn ...Option) error {
 		f := s.Field(i)
 		manhands[f] = r.handlers.Handler(f)
 	}
-	g := generator.NewStruct(rr, tn, manhands, opts.StructPointer, opts.EncoderName, opts.DecoderName)
+	g := generator.NewStruct(
+		rr, tn, manhands, opts.StructPointer, opts.EncoderName, opts.DecoderName, opts.SizeName,
+	)
 
 	g.Generate()
 

@@ -5,44 +5,52 @@ import (
 
 	"github.com/sirkon/fenneg/internal/er"
 	"github.com/sirkon/fenneg/internal/renderer"
+	"github.com/sirkon/gogh"
 )
 
-func NewSliceInt16() SliceInt {
-	return SliceInt{16}
+func NewSliceInt16() *SliceInt {
+	return &SliceInt{bits: 16}
 }
 
-func NewSliceInt32() SliceInt {
-	return SliceInt{32}
+func NewSliceInt32() *SliceInt {
+	return &SliceInt{bits: 32}
 }
 
-func NewSliceInt64() SliceInt {
-	return SliceInt{64}
+func NewSliceInt64() *SliceInt {
+	return &SliceInt{bits: 64}
 }
 
 type SliceInt struct {
-	bits int
+	bits   int
+	lenkey string
 }
 
 // Name to implement TypeHandler.
-func (i SliceInt) Name(*renderer.Go) string {
+func (i *SliceInt) Name(*renderer.Go) string {
 	return "[]int" + strconv.Itoa(i.bits)
 }
 
 // Pre to implement TypeHandler.
-func (i SliceInt) Pre(r *renderer.Go, src string) {}
+func (i *SliceInt) Pre(r *renderer.Go, src string) {
+	key := gogh.Private("len", src)
+	uniq := r.Uniq(key)
+	r.Imports().Varsize().Ref("vsize")
+	r.L(`$0 := $vsize.Len($src) + len($src) * $1`, uniq, i.elemBytes())
+	i.lenkey = uniq
+}
 
 // Len to implement TypeHandler.
-func (i SliceInt) Len() int {
+func (i *SliceInt) Len() int {
 	return i.elemBytes()
 }
 
 // LenExpr to implement TypeHandler.
-func (i SliceInt) LenExpr(r *renderer.Go, src string) string {
-	return strconv.Itoa(i.elemBytes())
+func (i *SliceInt) LenExpr(r *renderer.Go, src string) string {
+	return i.lenkey
 }
 
 // Encoding to implement TypeHandler.
-func (i SliceInt) Encoding(r *renderer.Go, dst, src string) {
+func (i *SliceInt) Encoding(r *renderer.Go, dst, src string) {
 	r.Imports().Binary().Ref("bin")
 	r.L(`$dst = $bin.AppendUvarint($dst, uint64(len($src)))`)
 	r.L(`for i := range $src {`)
@@ -51,7 +59,7 @@ func (i SliceInt) Encoding(r *renderer.Go, dst, src string) {
 }
 
 // Decoding to implement TypeHandler.
-func (i SliceInt) Decoding(r *renderer.Go, dst, src string) bool {
+func (i *SliceInt) Decoding(r *renderer.Go, dst, src string) bool {
 	off := r.Uniq("off")
 	siz := r.Uniq("size")
 	r.Imports().Binary().Ref("bin")
@@ -85,6 +93,6 @@ func (i SliceInt) Decoding(r *renderer.Go, dst, src string) bool {
 	return true
 }
 
-func (i SliceInt) elemBytes() int {
+func (i *SliceInt) elemBytes() int {
 	return i.bits >> 3
 }
