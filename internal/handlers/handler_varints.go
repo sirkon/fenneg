@@ -1,10 +1,20 @@
 package handlers
 
 import (
-	"github.com/sirkon/gogh"
 	"github.com/sirkon/fenneg/internal/er"
 	"github.com/sirkon/fenneg/internal/renderer"
+	"github.com/sirkon/gogh"
 )
+
+// ArchVarint handles int with uleb128 zigzag encoding/decoding.
+func ArchVarint() *Varint {
+	chillCheck()
+
+	return &Varint{
+		bits:   0,
+		lenkey: "",
+	}
+}
 
 // Varint16 handles int16 with uleb128 zigzag encoding/decoding.
 func Varint16() *Varint {
@@ -39,6 +49,10 @@ type Varint struct {
 
 // Name to implement TypeHandler.
 func (v *Varint) Name(r *renderer.Go) string {
+	if v.bits == 0 {
+		return "int"
+	}
+
 	return r.S(`int$0`, v.bits)
 }
 
@@ -95,7 +109,7 @@ func (v *Varint) Decoding(r *renderer.Go, dst, src string) bool {
 	er.Return().New("$decode: $malformedVarint").Rend(r)
 	r.L(`    }`)
 	if v.bits != 64 {
-		r.L(`$dst = int$0($val)`, v.bits)
+		r.L(`$dst = $0($val)`, v.Name(r))
 	}
 	r.L(`    $src = $src[$off:]`)
 	r.L(`}`)

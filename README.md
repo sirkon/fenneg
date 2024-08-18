@@ -146,21 +146,30 @@ Here:
   little endian encoding. I mean, if your `LogRecorder` interface will have, say, `intypes.VU64` argument type in one
   of its methods, the argument type will be replaced to `uint64` in both recorder and handler implementations.
 
-These types are called `builtins`.
+You can also make `fenneg.Chill()` call and then there will be a support for:
+
+| type         | notice               |
+|--------------|----------------------|
+| `int`        | Treated as `int64`.  |
+| `uint`       | Treated as `uint64`. |
+| `intypes.VI` |                      |
+| `intypes.VU` |                      |
+
+All these types are called `builtins`.
 
 ## Auto-supported types.
 
 ```go
 type Encoder interface{
-    Len() int
-	// Encode must append to the dst slice and returns
-	// the resulted slice.
+    Len() int 
+    // Encode must append to the dst slice and returns
+    // the resulted slice. 
     Encode([]byte) []byte
 }
 
 type Decoder interface{
-	// Decode returns the rest of the data after it ends
-	// its job.
+    // its job.
+    // Decode returns the rest of the data after it ends
     Decode([]byte) ([]byte, error)
 }
 ```
@@ -249,7 +258,7 @@ You can even remove `DeprecatedOp` arguments altogether at some point, once you 
 the deprecated `Op` in your logs anymore. But don't remove the method or make it private nevertheless, cause the
 order.
 
-And it is even harder for structures: you can only append new fields to the end of their list and these field must
+And it is even harder for structures: you can only append new fields to the end of their list and these fields must
 have your custom type that handles no data left case.
 
 # TODO

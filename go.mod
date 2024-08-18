@@ -9,7 +9,7 @@ require (
 	github.com/sirkon/deepequal v0.5.5
 	github.com/sirkon/errors v0.5.0
 	github.com/sirkon/gogh v0.20.1
-	github.com/sirkon/intypes v0.0.3
+	github.com/sirkon/intypes v0.1.0
 	github.com/sirkon/jsonexec v0.0.5
 	github.com/sirkon/message v1.6.1
 	github.com/sirkon/testlog v0.1.0

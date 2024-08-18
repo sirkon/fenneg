@@ -138,6 +138,9 @@ func init() {
 		"bool": func() TypeHandler {
 			return handlers.Bool{}
 		},
+		"int": func() TypeHandler {
+			return handlers.ArchInt()
+		},
 		"int8": func() TypeHandler {
 			return handlers.Int8()
 		},
@@ -149,6 +152,9 @@ func init() {
 		},
 		"int64": func() TypeHandler {
 			return handlers.Int64()
+		},
+		"uint": func() TypeHandler {
+			return handlers.ArchUint()
 		},
 		"uint8": func() TypeHandler {
 			return handlers.Uint8()
@@ -208,12 +214,16 @@ func init() {
 			}
 
 			switch v.Obj().Name() {
+			case "VI":
+				return handlers.ArchVarint()
 			case "VI16":
 				return handlers.Varint16()
 			case "VI32":
 				return handlers.Varint32()
 			case "VI64":
 				return handlers.Varint64()
+			case "VU":
+				return handlers.ArchUint()
 			case "VU16":
 				return handlers.Uvarint16()
 			case "VU32":

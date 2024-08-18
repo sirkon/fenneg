@@ -1,10 +1,20 @@
 package handlers
 
 import (
-	"github.com/sirkon/gogh"
 	"github.com/sirkon/fenneg/internal/er"
 	"github.com/sirkon/fenneg/internal/renderer"
+	"github.com/sirkon/gogh"
 )
+
+// ArchUvarint handles uint with uleb128 zigzag encoding/decoding.
+func ArchUvarint() *Uvarint {
+	chillCheck()
+
+	return &Uvarint{
+		bits:   0,
+		lenkey: "",
+	}
+}
 
 // Uvarint16 handles uint16 with uleb128 zigzag encoding/decoding.
 func Uvarint16() *Uvarint {
@@ -39,6 +49,10 @@ type Uvarint struct {
 
 // Name to implement TypeHandler.
 func (v *Uvarint) Name(r *renderer.Go) string {
+	if v.bits == 0 {
+		return "uint"
+	}
+
 	return r.S(`uint$0`, v.bits)
 }
 
@@ -95,7 +109,7 @@ func (v *Uvarint) Decoding(r *renderer.Go, dst, src string) bool {
 	er.Return().New("$decode: $malformedUvarint").Rend(r)
 	r.L(`    }`)
 	if v.bits != 64 {
-		r.L(`$dst = uint$0($val)`, v.bits)
+		r.L(`$dst = $0($val)`, v.Name(r), v.bits)
 	}
 	r.L(`    $src = $src[$off:]`)
 	r.L(`}`)

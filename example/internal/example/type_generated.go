@@ -37,7 +37,7 @@ func (t *TypeRecorder) Fixeds(a bool, b int32, c uint16, d float64, e [12]byte) 
 	}
 
 	// Encode b(int32).
-	buf = binary.LittleEndian.AppendUint32(buf, uint32(b))
+	buf = binary.LittleEndian.AppendUint32(buf, int32(b))
 
 	// Encode c(uint16).
 	buf = binary.LittleEndian.AppendUint16(buf, c)

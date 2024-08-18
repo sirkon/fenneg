@@ -55,6 +55,8 @@ func main() {
 		message.Critical(errors.Wrap(err, "process oplog"))
 	}
 
+	fenneg.Chill()
+
 	if err := r.Struct(examplePkg, "Struct"); err != nil {
 		message.Critical(errors.Wrap(err, "process struct"))
 	}

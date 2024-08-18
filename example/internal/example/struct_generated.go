@@ -20,11 +20,16 @@ func StructLen(s *Struct) int {
 	// len Theme(uint32).
 	// len Data([]byte).
 	// len Field(string).
+	// len Int(int).
+	// len Uint(uint).
+	// len VarInt(int).
+	// len VarUint(uint).
 
 	lenData := varsize.Len(s.Data) + len(s.Data)
 	lenField := varsize.Uint(uint(len(s.Field))) + len(s.Field)
+	lenVarInt := varsize.Int(s.VarInt)
 
-	return 16 + 16 + 4 + 4 + lenData + lenField
+	return 16 + 16 + 4 + 4 + lenData + lenField + 64 + 8 + lenVarInt + 8
 }
 func StructEncode(dst []byte, s *Struct) []byte {
 	if s == nil {
@@ -55,6 +60,18 @@ func StructEncode(dst []byte, s *Struct) []byte {
 	// Encode Field(string).
 	dst = binary.AppendUvarint(dst, uint64(len(s.Field)))
 	dst = append(dst, s.Field...)
+
+	// Encode Int(int).
+	dst = binary.LittleEndian.AppendUint64(dst, uint64(s.Int))
+
+	// Encode Uint(uint).
+	dst = binary.LittleEndian.AppendUint64(dst, uint64(s.Uint))
+
+	// Encode VarInt(int).
+	dst = binary.AppendVarint(dst, int64(s.VarInt))
+
+	// Encode VarUint(uint).
+	dst = binary.LittleEndian.AppendUint64(dst, uint64(s.VarUint))
 
 	return dst
 }
@@ -124,6 +141,40 @@ func StructDecode(s *Struct, src []byte) (err error) {
 		s.Field = string(src[:size])
 		src = src[size:]
 	}
+
+	// Decode Int(int).
+	if len(src) < 64 {
+		return errors.New("decode s.Int(int): record buffer is too small").Uint64("length-required", uint64(64)).Int("length-actual", len(src))
+	}
+	s.Int = int(binary.LittleEndian.Uint64(src))
+	src = src[64:]
+
+	// Decode Uint(uint).
+	if len(src) < 8 {
+		return errors.New("decode s.Uint(uint): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
+	}
+	s.Uint = uint(binary.LittleEndian.Uint64(src))
+	src = src[8:]
+
+	// Decode VarInt(int).
+	{
+		val, off := binary.Varint(src)
+		if off <= 0 {
+			if off == 0 {
+				return errors.New("decode s.VarInt(int): record buffer is too small")
+			}
+			return errors.New("decode s.VarInt(int): malformed varint sequence")
+		}
+		s.VarInt = int(val)
+		src = src[off:]
+	}
+
+	// Decode VarUint(uint).
+	if len(src) < 8 {
+		return errors.New("decode s.VarUint(uint): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
+	}
+	s.VarUint = uint(binary.LittleEndian.Uint64(src))
+	src = src[8:]
 
 	if len(src) > 0 {
 		return errors.New("the record was not emptied after the last argument decoded").Int("record-bytes-left", len(src))
