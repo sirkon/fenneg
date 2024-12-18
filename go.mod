@@ -8,7 +8,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/sirkon/deepequal v0.5.5
 	github.com/sirkon/errors v0.5.0
-	github.com/sirkon/gogh v0.20.1
+	github.com/sirkon/gogh v0.24.0
 	github.com/sirkon/intypes v0.1.0
 	github.com/sirkon/jsonexec v0.0.5
 	github.com/sirkon/message v1.6.1
@@ -24,8 +24,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/lestrrat/go-strftime v0.0.0-20180220042222-ba3bf9c1d042 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
-	github.com/sirkon/dst v0.26.4 // indirect
-	github.com/sirkon/fancyfmt v0.3.1 // indirect
 	github.com/sirkon/go-format v0.1.2 // indirect
 	github.com/sirkon/go-format/v2 v2.0.2 // indirect
 	github.com/sirkon/protoast v0.29.0 // indirect

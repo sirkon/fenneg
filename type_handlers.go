@@ -114,6 +114,25 @@ func (h *TypesHandlers) Handler(arg *types.Var) TypeHandler {
 		}
 	}
 
+	// Type support was not found. May be it is a container of supported types or a pointer to it?
+	switch t := arg.Type().(type) {
+	case *types.Slice:
+		hh := h.Handler(types.NewVar(arg.Pos(), arg.Pkg(), arg.Name(), t.Elem()))
+		if hh == nil {
+			break
+		}
+
+		if hh.Len() > 0 {
+			return handlers.NewSlicesUniform(hh, t.Elem())
+		}
+
+		return handlers.NewSlicesVariadic(hh, t.Elem())
+	case *types.Map:
+		// TODO add map[K]V support for supported K and V.
+	case *types.Pointer:
+		// TODO add *T support for supported T.
+	}
+
 	return nil
 }
 

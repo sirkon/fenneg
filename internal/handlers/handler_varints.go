@@ -87,10 +87,13 @@ func (v *Varint) Encoding(r *renderer.Go, dst, src string) {
 
 // Decoding to implement TypeHandler.
 func (v *Varint) Decoding(r *renderer.Go, dst, src string) bool {
+	r = r.Scope()
+
 	off := r.Uniq("off")
 	val := r.Uniq("val", dst)
 	r.Imports().Binary().Ref("bin")
 	r.Imports().Errors().Ref("errors")
+	r = r.Scope()
 	r.Let(off, off)
 
 	r.L(`{`)

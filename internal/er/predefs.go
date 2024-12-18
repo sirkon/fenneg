@@ -12,9 +12,12 @@ var predefs = map[string]string{
 func feedRenderer(r *renderer.Go) *renderer.Go {
 	r = r.Scope()
 
-	r.TryLet("branch", "")
-	r.TryLet("dst", "")
-	r.TryLet("dstType", "")
+	vals := []string{"branch", "dst", "dstType"}
+	for _, val := range vals {
+		if !r.InCtx(val) {
+			r.Let(val, "")
+		}
+	}
 
 	for k, v := range predefs {
 		if k == "decode" && r.S("$branch") == "" {

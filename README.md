@@ -16,7 +16,9 @@ Flat encoding code generation for Go.
 * [TODO](#todo)
 
 
+# Warning!
 
+Only 64 bits architectures are correctly supported.
 
 # Installation.
 

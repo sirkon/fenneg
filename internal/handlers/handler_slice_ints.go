@@ -60,10 +60,13 @@ func (i *SliceInt) Encoding(r *renderer.Go, dst, src string) {
 
 // Decoding to implement TypeHandler.
 func (i *SliceInt) Decoding(r *renderer.Go, dst, src string) bool {
+	r.Scope()
+
 	off := r.Uniq("off")
 	siz := r.Uniq("size")
 	r.Imports().Binary().Ref("bin")
 	r.Imports().Errors().Ref("errors")
+	r = r.Scope()
 	r.Let("siz", siz)
 	r.Let("off", off)
 	r.Let("bits", i.bits)

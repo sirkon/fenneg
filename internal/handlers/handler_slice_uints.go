@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"github.com/sirkon/gogh"
 	"strconv"
 
 	"github.com/sirkon/fenneg/internal/er"
 	"github.com/sirkon/fenneg/internal/renderer"
+	"github.com/sirkon/gogh"
 )
 
 func NewSliceUint16() *SliceUint {
@@ -60,10 +60,13 @@ func (i *SliceUint) Encoding(r *renderer.Go, dst, src string) {
 
 // Decoding to implement TypeHandler.
 func (i *SliceUint) Decoding(r *renderer.Go, dst, src string) bool {
+	r.Scope()
+
 	off := r.Uniq("off")
 	siz := r.Uniq("size")
 	r.Imports().Binary().Ref("bin")
 	r.Imports().Errors().Ref("errors")
+	r = r.Scope()
 	r.Let("siz", siz)
 	r.Let("off", off)
 	r.Let("bits", i.bits)
