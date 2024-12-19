@@ -34,7 +34,7 @@ func (s *SlicesVariadic) Pre(r *renderer.Go, src string) {
 	key := gogh.Private("len", src)
 	uniq := r.Uniq(key)
 	r.Imports().Varsize().Ref("vsize")
-	r.L(`$0 := $vsize.Len($src) + len($src)*16`, uniq, s.Len())
+	r.L(`$0 := $vsize.Len($src) + len($src)*16`, uniq)
 	s.lenkey = uniq
 }
 

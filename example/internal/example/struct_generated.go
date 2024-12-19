@@ -30,7 +30,7 @@ func StructLen(s *Struct) int {
 	lenData := varsize.Len(s.Data) + len(s.Data)
 	lenField := varsize.Uint(uint(len(s.Field))) + len(s.Field)
 	lenVarInt := varsize.Int(s.VarInt)
-	lenBoolSlice := varsize.Len(s.BoolSlice) + len(s.BoolSlice)*-1
+	lenBoolSlice := varsize.Len(s.BoolSlice) + len(s.BoolSlice)*1
 	lenStringSlice := varsize.Len(s.StringSlice) + len(s.StringSlice)*16
 
 	return 16 + 16 + 4 + 4 + lenData + lenField + 64 + 8 + lenVarInt + 8 + lenBoolSlice + lenStringSlice
