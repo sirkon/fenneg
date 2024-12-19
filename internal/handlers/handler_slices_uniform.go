@@ -84,7 +84,7 @@ func (s *SlicesUniform) Decoding(r *renderer.Go, dst, src string) bool {
 	r.Let("dst", r.S("$dst[$0]", it))
 	r.L(`    for $0 := 0; $0 < int($siz); $0++ {`, it)
 	s.handler.Decoding(r, dst, src)
-	r.L(`        $src = $src[$0:]`, s.handler.LenExpr(r, src))
+	r.L(`        $src = $src[$0:]`, s.handler.Len())
 	r.L(`    }`)
 	r.L(`}`)
 
