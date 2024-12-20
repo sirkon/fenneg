@@ -33,8 +33,15 @@ func (s *SlicesVariadic) Name(r *renderer.Go) string {
 func (s *SlicesVariadic) Pre(r *renderer.Go, src string) {
 	key := gogh.Private("len", src)
 	uniq := r.Uniq(key)
+	item := r.Uniq("item")
 	r.Imports().Varsize().Ref("vsize")
-	r.L(`$0 := $vsize.Len($src) + len($src)*16`, uniq)
+	r.L(`$0 := $vsize.Len($src)`, uniq)
+	r.L(`for _, $0 := range $src { `, item)
+	r = r.Scope()
+	r.Let("src", item)
+	s.handler.Pre(r, item)
+	r.L(`    $0 += $1`, uniq, s.handler.LenExpr(r, item))
+	r.L(`}`)
 	s.lenkey = uniq
 }
 
