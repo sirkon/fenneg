@@ -4,6 +4,7 @@ package example
 
 import (
 	"encoding/binary"
+	"math"
 
 	"github.com/sirkon/errors"
 	"github.com/sirkon/varsize"
@@ -19,6 +20,8 @@ func StructLen(s *Struct) int {
 	// len Repeat(uint32).
 	// len Theme(uint32).
 	// len Data([]byte).
+	// len Pi(float32).
+	// len E(float64).
 	// len Field(string).
 	// len Int(int).
 	// len Uint(uint).
@@ -30,6 +33,7 @@ func StructLen(s *Struct) int {
 	lenData := varsize.Len(s.Data) + len(s.Data)
 	lenField := varsize.Uint(uint(len(s.Field))) + len(s.Field)
 	lenVarInt := varsize.Int(s.VarInt)
+	lenVarUint := varsize.Uint(s.VarUint)
 	lenBoolSlice := varsize.Len(s.BoolSlice) + len(s.BoolSlice)*1
 	lenStringSlice := varsize.Len(s.StringSlice)
 	for _, item := range s.StringSlice {
@@ -37,8 +41,9 @@ func StructLen(s *Struct) int {
 		lenStringSlice += lenItem
 	}
 
-	return 16 + 16 + 4 + 4 + lenData + lenField + 64 + 8 + lenVarInt + 8 + lenBoolSlice + lenStringSlice
+	return 16 + 16 + 4 + 4 + lenData + 4 + 8 + lenField + 8 + 8 + lenVarInt + lenVarUint + lenBoolSlice + lenStringSlice
 }
+
 func StructEncode(dst []byte, s *Struct) []byte {
 	if s == nil {
 		return dst
@@ -65,6 +70,12 @@ func StructEncode(dst []byte, s *Struct) []byte {
 	dst = binary.AppendUvarint(dst, uint64(len(s.Data)))
 	dst = append(dst, s.Data...)
 
+	// Encode Pi(float32).
+	dst = binary.LittleEndian.AppendUint32(dst, math.Float32bits(s.Pi))
+
+	// Encode E(float64).
+	dst = binary.LittleEndian.AppendUint64(dst, math.Float64bits(s.E))
+
 	// Encode Field(string).
 	dst = binary.AppendUvarint(dst, uint64(len(s.Field)))
 	dst = append(dst, s.Field...)
@@ -79,9 +90,10 @@ func StructEncode(dst []byte, s *Struct) []byte {
 	dst = binary.AppendVarint(dst, int64(s.VarInt))
 
 	// Encode VarUint(uint).
-	dst = binary.LittleEndian.AppendUint64(dst, uint64(s.VarUint))
+	dst = binary.AppendUvarint(dst, uint64(s.VarUint))
 
 	// Encode BoolSlice([]bool).
+	dst = binary.AppendUvarint(dst, uint64(len(s.BoolSlice)))
 	for _, v := range s.BoolSlice {
 		if v {
 			dst = append(dst, 1)
@@ -91,6 +103,7 @@ func StructEncode(dst []byte, s *Struct) []byte {
 	}
 
 	// Encode StringSlice([]string).
+	dst = binary.AppendUvarint(dst, uint64(len(s.StringSlice)))
 	for _, v := range s.StringSlice {
 		dst = binary.AppendUvarint(dst, uint64(len(v)))
 		dst = append(dst, v...)
@@ -148,6 +161,24 @@ func StructDecode(s *Struct, src []byte) (err error) {
 		src = src[size:]
 	}
 
+	// Decode Pi(float32).
+	if len(src) >= 4 {
+		keySrc := binary.LittleEndian.Uint32(src)
+		s.Pi = math.Float32frombits(keySrc)
+	} else {
+		return errors.New("decode s.Pi(float32): record buffer is too small").Uint64("length-required", uint64(4)).Int("length-actual", len(src))
+	}
+	src = src[4:]
+
+	// Decode E(float64).
+	if len(src) >= 8 {
+		keySrc := binary.LittleEndian.Uint64(src)
+		s.E = math.Float64frombits(keySrc)
+	} else {
+		return errors.New("decode s.E(float64): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
+	}
+	src = src[8:]
+
 	// Decode Field(string).
 	{
 		size, off := binary.Uvarint(src)
@@ -166,11 +197,11 @@ func StructDecode(s *Struct, src []byte) (err error) {
 	}
 
 	// Decode Int(int).
-	if len(src) < 64 {
-		return errors.New("decode s.Int(int): record buffer is too small").Uint64("length-required", uint64(64)).Int("length-actual", len(src))
+	if len(src) < 8 {
+		return errors.New("decode s.Int(int): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
 	}
 	s.Int = int(binary.LittleEndian.Uint64(src))
-	src = src[64:]
+	src = src[8:]
 
 	// Decode Uint(uint).
 	if len(src) < 8 {
@@ -193,11 +224,17 @@ func StructDecode(s *Struct, src []byte) (err error) {
 	}
 
 	// Decode VarUint(uint).
-	if len(src) < 8 {
-		return errors.New("decode s.VarUint(uint): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
+	{
+		val, off := binary.Uvarint(src)
+		if off <= 0 {
+			if off == 0 {
+				return errors.New("decode s.VarUint(uint): record buffer is too small")
+			}
+			return errors.New("decode s.VarUint(uint): malformed uvarint sequence")
+		}
+		s.VarUint = uint(val)
+		src = src[off:]
 	}
-	s.VarUint = uint(binary.LittleEndian.Uint64(src))
-	src = src[8:]
 
 	// Decode BoolSlice([]bool).
 	{
@@ -252,7 +289,7 @@ func StructDecode(s *Struct, src []byte) (err error) {
 	}
 
 	if len(src) > 0 {
-		return errors.New("the record was not emptied after the last argument decoded").Int("record-bytes-left", len(src))
+		return errors.Newf("the buffer still has %d bytes left after the last argument decoded", len(src)).Int("record-bytes-left", len(src))
 	}
 
 	return nil

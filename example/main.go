@@ -26,7 +26,7 @@ func main() {
 					return nil
 				}
 
-				if t.Obj().Pkg().Path() != "github.com/sirkon/fenneg/example/internal/example" {
+				if t.Obj().Pkg().Path() != examplePkg {
 					return nil
 				}
 

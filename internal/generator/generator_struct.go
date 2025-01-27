@@ -106,6 +106,7 @@ func (g *Struct) generateLen(r *renderer.Go) {
 func (g *Struct) generateEncoding(r *renderer.Go) {
 	r = r.Scope()
 	var fnR *gogh.GoFuncRenderer[*renderer.Imports]
+	r.N()
 	if g.pointer {
 		r.L(`// $0 encodes content of $1.`, g.encoderName, r.Type(g.src))
 		fnR = r.M(g.argName, "*"+r.Type(g.src))(g.encoderName)("dst", "[]byte")
@@ -152,6 +153,7 @@ func (g *Struct) generateEncoding(r *renderer.Go) {
 func (g *Struct) generateDecoding(r *renderer.Go) {
 	r = r.Scope()
 	var fnR *gogh.GoFuncRenderer[*renderer.Imports]
+	r.N()
 	if g.pointer {
 		r.L(`// $0 decodes content of $1.`, g.decoderName, r.Type(g.src))
 		fnR = r.M(g.argName, "*"+r.Type(g.src))(g.decoderName)("src", "[]byte")
@@ -184,7 +186,7 @@ func (g *Struct) generateDecoding(r *renderer.Go) {
 
 		r.L(`    if len(src) > 0 {`)
 		er.Return().
-			New("the record was not emptied after the last argument decoded").
+			Newf("the buffer still has %d bytes left after the last argument decoded", "len(src)").
 			Int("record-bytes-left", r.S(`len(src)`)).
 			Rend(r)
 		r.L(`    }`)

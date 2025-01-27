@@ -69,7 +69,7 @@ func (i Int) Encoding(r *renderer.Go, dst, src string) {
 		r.L(`$dst = append($dst, uint8($src))`)
 	default:
 		r.Imports().Binary().Ref("bin")
-		r.L(`$dst = $bin.LittleEndian.AppendUint$0($dst, $1($src))`, i, i.Name(r))
+		r.L(`$dst = $bin.LittleEndian.AppendUint$0($dst, uint$0($src))`, i)
 	}
 }
 
@@ -97,7 +97,7 @@ func (i Int) Decoding(r *renderer.Go, dst, src string) bool {
 
 func (i Int) bytes() int {
 	if i == 0 {
-		return 64
+		return 8
 	}
 
 	return int(i >> 3)

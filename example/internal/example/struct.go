@@ -8,6 +8,8 @@ type Struct struct {
 	Repeat      uint32
 	Theme       uint32
 	Data        []byte
+	Pi          float32
+	E           float64
 	Field       string
 	Int         int
 	Uint        uint

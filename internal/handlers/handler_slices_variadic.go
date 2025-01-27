@@ -57,7 +57,10 @@ func (s *SlicesVariadic) LenExpr(r *renderer.Go, src string) string {
 
 // Encoding to implement TypeHandler.
 func (s *SlicesVariadic) Encoding(r *renderer.Go, dst, src string) {
+	r.Imports().Binary().Ref("bin")
 	r = r.Scope()
+
+	r.L(`$dst = $bin.AppendUvarint($dst, uint64(len($src)))`)
 
 	v := r.Uniq("v", src)
 	r.L(`for _, $0 := range $src {`, v)

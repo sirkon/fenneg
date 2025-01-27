@@ -242,7 +242,7 @@ func init() {
 			case "VI64":
 				return handlers.Varint64()
 			case "VU":
-				return handlers.ArchUint()
+				return handlers.ArchUvarint()
 			case "VU16":
 				return handlers.Uvarint16()
 			case "VU32":
