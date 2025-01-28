@@ -90,7 +90,7 @@ func (s *SlicesVariadic) Decoding(r *renderer.Go, dst, src string) bool {
 	r.L(`    }`)
 	r.L(`    $src = $src[$off:]`)
 	r.L(`    $dst = make([]$0, $siz)`, r.Type(s.itemType))
-	it := r.Uniq("iter", dst)
+	it := r.Uniq("i")
 	r.Let("dst", r.S("$dst[$0]", it))
 	r.L(`    for $0 := 0; $0 < int($siz); $0++ {`, it)
 	s.handler.Decoding(r, dst, src)

@@ -29,6 +29,20 @@ func TestStruct(t *testing.T) {
 		VarUint:     4,
 		BoolSlice:   []bool{true, false, true},
 		StringSlice: []string{"a", "b", "c"},
+		BoolSliceSlice: [][]bool{
+			{
+				true,
+				false,
+			},
+			{
+				false,
+				true,
+			},
+		},
+		StringSliceSlice: [][]string{
+			{"a", "b", "c"},
+			{"c", "b", "a"},
+		},
 	}
 
 	var buf []byte
@@ -40,6 +54,8 @@ func TestStruct(t *testing.T) {
 	}
 
 	if !deepequal.Equal(res, sample) {
+		deepequal.SideBySide(t, "struct", sample, res)
+	} else {
 		deepequal.SideBySide(t, "struct", sample, res)
 	}
 }

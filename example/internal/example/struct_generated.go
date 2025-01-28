@@ -29,6 +29,8 @@ func StructLen(s *Struct) int {
 	// len VarUint(uint).
 	// len BoolSlice([]bool).
 	// len StringSlice([]string).
+	// len BoolSliceSlice([][]bool).
+	// len StringSliceSlice([][]string).
 
 	lenData := varsize.Len(s.Data) + len(s.Data)
 	lenField := varsize.Uint(uint(len(s.Field))) + len(s.Field)
@@ -40,8 +42,22 @@ func StructLen(s *Struct) int {
 		lenItem := varsize.Uint(uint(len(item))) + len(item)
 		lenStringSlice += lenItem
 	}
+	lenBoolSliceSlice := varsize.Len(s.BoolSliceSlice)
+	for _, item := range s.BoolSliceSlice {
+		lenItem := varsize.Len(item) + len(item)*1
+		lenBoolSliceSlice += lenItem
+	}
+	lenStringSliceSlice := varsize.Len(s.StringSliceSlice)
+	for _, item := range s.StringSliceSlice {
+		lenItem := varsize.Len(item)
+		for _, item2 := range item {
+			lenItem2 := varsize.Uint(uint(len(item2))) + len(item2)
+			lenItem += lenItem2
+		}
+		lenStringSliceSlice += lenItem
+	}
 
-	return 16 + 16 + 4 + 4 + lenData + 4 + 8 + lenField + 8 + 8 + lenVarInt + lenVarUint + lenBoolSlice + lenStringSlice
+	return 16 + 16 + 4 + 4 + lenData + 4 + 8 + lenField + 8 + 8 + lenVarInt + lenVarUint + lenBoolSlice + lenStringSlice + lenBoolSliceSlice + lenStringSliceSlice
 }
 
 func StructEncode(dst []byte, s *Struct) []byte {
@@ -107,6 +123,29 @@ func StructEncode(dst []byte, s *Struct) []byte {
 	for _, v := range s.StringSlice {
 		dst = binary.AppendUvarint(dst, uint64(len(v)))
 		dst = append(dst, v...)
+	}
+
+	// Encode BoolSliceSlice([][]bool).
+	dst = binary.AppendUvarint(dst, uint64(len(s.BoolSliceSlice)))
+	for _, v := range s.BoolSliceSlice {
+		dst = binary.AppendUvarint(dst, uint64(len(v)))
+		for _, vV := range v {
+			if vV {
+				dst = append(dst, 1)
+			} else {
+				dst = append(dst, 0)
+			}
+		}
+	}
+
+	// Encode StringSliceSlice([][]string).
+	dst = binary.AppendUvarint(dst, uint64(len(s.StringSliceSlice)))
+	for _, v := range s.StringSliceSlice {
+		dst = binary.AppendUvarint(dst, uint64(len(v)))
+		for _, vV := range v {
+			dst = binary.AppendUvarint(dst, uint64(len(vV)))
+			dst = append(dst, vV...)
+		}
 	}
 
 	return dst
@@ -247,12 +286,12 @@ func StructDecode(s *Struct, src []byte) (err error) {
 		}
 		src = src[off:]
 		s.BoolSlice = make([]bool, size)
-		for iter := 0; iter < int(size); iter++ {
+		for i := 0; i < int(size); i++ {
 			if len(src) < 1 {
-				return errors.New("decode s.BoolSlice[iter]([]bool): record buffer is too small").Uint64("length-required", uint64(1)).Int("length-actual", len(src))
+				return errors.New("decode s.BoolSlice[i]([]bool): record buffer is too small").Uint64("length-required", uint64(1)).Int("length-actual", len(src))
 			}
 			if src[0] != 0 {
-				s.BoolSlice[iter] = true
+				s.BoolSlice[i] = true
 			}
 			src = src[1:]
 		}
@@ -269,21 +308,99 @@ func StructDecode(s *Struct, src []byte) (err error) {
 		}
 		src = src[off:]
 		s.StringSlice = make([]string, size)
-		for iter := 0; iter < int(size); iter++ {
+		for i := 0; i < int(size); i++ {
 			{
 				size2, off2 := binary.Uvarint(src)
 				if off2 <= 0 {
 					if off2 == 0 {
-						return errors.New("decode s.StringSlice[iter]([]string) length: record buffer is too small")
+						return errors.New("decode s.StringSlice[i]([]string) length: record buffer is too small")
 					}
-					return errors.New("decode s.StringSlice[iter]([]string) length: malformed uvarint sequence")
+					return errors.New("decode s.StringSlice[i]([]string) length: malformed uvarint sequence")
 				}
 				src = src[off2:]
 				if int(size2) > len(src) {
-					return errors.New("decode s.StringSlice[iter]([]string) content: record buffer is too small").Uint64("length-required", uint64(int(size2))).Int("length-actual", len(src))
+					return errors.New("decode s.StringSlice[i]([]string) content: record buffer is too small").Uint64("length-required", uint64(int(size2))).Int("length-actual", len(src))
 				}
-				s.StringSlice[iter] = string(src[:size2])
+				s.StringSlice[i] = string(src[:size2])
 				src = src[size2:]
+			}
+		}
+	}
+
+	// Decode BoolSliceSlice([][]bool).
+	{
+		size, off := binary.Uvarint(src)
+		if off <= 0 {
+			if off == 0 {
+				return errors.New("decode s.BoolSliceSlice([][]bool) length: record buffer is too small")
+			}
+			return errors.New("decode s.BoolSliceSlice([][]bool) length: malformed uvarint sequence")
+		}
+		src = src[off:]
+		s.BoolSliceSlice = make([][]bool, size)
+		for i := 0; i < int(size); i++ {
+			{
+				size2, off2 := binary.Uvarint(src)
+				if off2 <= 0 {
+					if off2 == 0 {
+						return errors.New("decode s.BoolSliceSlice[i]([][]bool) length: record buffer is too small")
+					}
+					return errors.New("decode s.BoolSliceSlice[i]([][]bool) length: malformed uvarint sequence")
+				}
+				src = src[off2:]
+				s.BoolSliceSlice[i] = make([]bool, size2)
+				for i2 := 0; i2 < int(size2); i2++ {
+					if len(src) < 1 {
+						return errors.New("decode s.BoolSliceSlice[i][i2]([][]bool): record buffer is too small").Uint64("length-required", uint64(1)).Int("length-actual", len(src))
+					}
+					if src[0] != 0 {
+						s.BoolSliceSlice[i][i2] = true
+					}
+					src = src[1:]
+				}
+			}
+		}
+	}
+
+	// Decode StringSliceSlice([][]string).
+	{
+		size, off := binary.Uvarint(src)
+		if off <= 0 {
+			if off == 0 {
+				return errors.New("decode s.StringSliceSlice([][]string) length: record buffer is too small")
+			}
+			return errors.New("decode s.StringSliceSlice([][]string) length: malformed uvarint sequence")
+		}
+		src = src[off:]
+		s.StringSliceSlice = make([][]string, size)
+		for i := 0; i < int(size); i++ {
+			{
+				size2, off2 := binary.Uvarint(src)
+				if off2 <= 0 {
+					if off2 == 0 {
+						return errors.New("decode s.StringSliceSlice[i]([][]string) length: record buffer is too small")
+					}
+					return errors.New("decode s.StringSliceSlice[i]([][]string) length: malformed uvarint sequence")
+				}
+				src = src[off2:]
+				s.StringSliceSlice[i] = make([]string, size2)
+				for i2 := 0; i2 < int(size2); i2++ {
+					{
+						size3, off3 := binary.Uvarint(src)
+						if off3 <= 0 {
+							if off3 == 0 {
+								return errors.New("decode s.StringSliceSlice[i][i2]([][]string) length: record buffer is too small")
+							}
+							return errors.New("decode s.StringSliceSlice[i][i2]([][]string) length: malformed uvarint sequence")
+						}
+						src = src[off3:]
+						if int(size3) > len(src) {
+							return errors.New("decode s.StringSliceSlice[i][i2]([][]string) content: record buffer is too small").Uint64("length-required", uint64(int(size3))).Int("length-actual", len(src))
+						}
+						s.StringSliceSlice[i][i2] = string(src[:size3])
+						src = src[size3:]
+					}
+				}
 			}
 		}
 	}
