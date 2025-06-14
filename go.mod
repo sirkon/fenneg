@@ -13,7 +13,7 @@ require (
 	github.com/sirkon/jsonexec v0.0.5
 	github.com/sirkon/message v1.6.1
 	github.com/sirkon/testlog v0.1.0
-	github.com/sirkon/varsize v0.0.1
+	github.com/sirkon/varsize v0.1.0
 	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
 	golang.org/x/tools v0.23.0
 )

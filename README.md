@@ -36,7 +36,7 @@ It helps to create compact and performant binary encoding and decoding for:
 This library can be used to create both standalone utilities with CLI or using runners like it is done
 in the [example](./example/main.go). Beware though it is not recommended to use this library as a dependency
 of your projects directly. An approach with some inner module of your project that will generate
-things is preferable, something placed in `internal/tools/`.:q
+things is preferable, something placed in `internal/tools/`.
 
 # Operation logs.
 
@@ -88,8 +88,7 @@ Where:
 - Although `LogOperationDispatcher` is an exact match for the `LogRecorder` as an interface, but it is an actual
   business logic, which is to be written by a user.
 
-So, this code generator is about rendering a code for a `LogOperationRecorder`'s t7y8uio];
-\\;'l implementation and a dispatching.
+So, this code generator is about rendering a code for a `LogOperationRecorder`'s  implementation and a dispatching.
 
 ## How the final utility is expected to work.
 
@@ -109,37 +108,32 @@ Arguments of the `LogRecorder` interface are having their own types. Some are su
 satisfying certain predefined interface. And you can define your own codegen steps for certain types too.
 This kind of customization is a reason why this thing is a framework rather than a ready to use utility.
 
-### List of types subported out of the box.
+### List of types supported out of the box.
 
-| type           |
-|----------------|
-| `bool`         |
-| `int8`         |
-| `int16`        |
-| `int32`        |
-| `int64`        |
-| `uint8`        |
-| `uint16`       |
-| `uint32`       |
-| `uint64`       |
-| `intypes.VI16` |
-| `intypes.VI32` |
-| `intypes.VI64` |
-| `intypes.VU16` |
-| `intypes.VU32` |
-| `intypes.VU64` |
-| `float32`      |
-| `float64`      |
-| `[N]byte`      |
-| `[]byte`       |
-| `[][]byte`     |
-| `string`       |
-| `[]int16`      |
-| `[]int32`      |
-| `[]int64`      |
-| `[]uint16`     |
-| `[]uint32`     |
-| `[]uint64`     |
+| type                                        | info                                                                                                        |
+|---------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| `bool`                                      |                                                                                                             |
+| `int8`                                      |                                                                                                             |
+| `int16`                                     |                                                                                                             |
+| `int32`                                     |                                                                                                             |
+| `int64`                                     |                                                                                                             |
+| `uint8`                                     |                                                                                                             |
+| `uint16`                                    |                                                                                                             |
+| `uint32`                                    |                                                                                                             |
+| `uint64`                                    |                                                                                                             |
+| `intypes.VI16`                              | This and all V.. below are just aliases for respective<br>integer types to force variadic encoding on them. |
+| `intypes.VI32`                              |                                                                                                             |
+| `intypes.VI64`                              |                                                                                                             |
+| `intypes.VU16`                              |                                                                                                             |
+| `intypes.VU32`                              |                                                                                                             |
+| `intypes.VU64`                              |                                                                                                             |
+| `float32`                                   |                                                                                                             |
+| `float64`                                   |                                                                                                             |
+| `[N]byte`                                   |                                                                                                             |
+| `[]byte`                                    |                                                                                                             |
+| `string`                                    |                                                                                                             |
+| `[]T`                                       | Where `T` is supported.                                                                                     |
+| `map[K]V`                                   | Where both `K` and `V` are supported.                                                                       |
 
 Here:
 

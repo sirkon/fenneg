@@ -31,6 +31,9 @@ func StructLen(s *Struct) int {
 	// len StringSlice([]string).
 	// len BoolSliceSlice([][]bool).
 	// len StringSliceSlice([][]string).
+	// len MapKFVF(map[uint32]uint32).
+	// len MapKFVV(map[uint32]string).
+	// len MapKVVF(map[string]uint32).
 
 	lenData := varsize.Len(s.Data) + len(s.Data)
 	lenField := varsize.Uint(uint(len(s.Field))) + len(s.Field)
@@ -50,14 +53,25 @@ func StructLen(s *Struct) int {
 	lenStringSliceSlice := varsize.Len(s.StringSliceSlice)
 	for _, item := range s.StringSliceSlice {
 		lenItem := varsize.Len(item)
-		for _, item2 := range item {
-			lenItem2 := varsize.Uint(uint(len(item2))) + len(item2)
-			lenItem += lenItem2
+		for _, itemItem := range item {
+			lenItemItem := varsize.Uint(uint(len(itemItem))) + len(itemItem)
+			lenItem += lenItemItem
 		}
 		lenStringSliceSlice += lenItem
 	}
+	lenMapKFVF := len(s.MapKFVF) * (4 + 4)
+	lenMapKFVV := varsize.MapLen(s.MapKFVV) + len(s.MapKFVV)*4
+	for _, value := range s.MapKFVV {
+		lenValue := varsize.Uint(uint(len(value))) + len(value)
+		lenMapKFVV += lenValue
+	}
+	lenMapKVVF := varsize.MapLen(s.MapKVVF) + len(s.MapKVVF)*4
+	for key := range s.MapKVVF {
+		lenKey := varsize.Uint(uint(len(key))) + len(key)
+		lenMapKVVF += lenKey
+	}
 
-	return 16 + 16 + 4 + 4 + lenData + 4 + 8 + lenField + 8 + 8 + lenVarInt + lenVarUint + lenBoolSlice + lenStringSlice + lenBoolSliceSlice + lenStringSliceSlice
+	return 16 + 16 + 4 + 4 + lenData + 4 + 8 + lenField + 8 + 8 + lenVarInt + lenVarUint + lenBoolSlice + lenStringSlice + lenBoolSliceSlice + lenStringSliceSlice + lenMapKFVF + lenMapKFVV + lenMapKVVF
 }
 
 func StructEncode(dst []byte, s *Struct) []byte {
@@ -146,6 +160,29 @@ func StructEncode(dst []byte, s *Struct) []byte {
 			dst = binary.AppendUvarint(dst, uint64(len(vV)))
 			dst = append(dst, vV...)
 		}
+	}
+
+	// Encode MapKFVF(map[uint32]uint32).
+	dst = binary.AppendUvarint(dst, uint64(len(s.MapKFVF)))
+	for k, v := range s.MapKFVF {
+		dst = binary.LittleEndian.AppendUint32(dst, k)
+		dst = binary.LittleEndian.AppendUint32(dst, v)
+	}
+
+	// Encode MapKFVV(map[uint32]string).
+	dst = binary.AppendUvarint(dst, uint64(len(s.MapKFVV)))
+	for k, v := range s.MapKFVV {
+		dst = binary.LittleEndian.AppendUint32(dst, k)
+		dst = binary.AppendUvarint(dst, uint64(len(v)))
+		dst = append(dst, v...)
+	}
+
+	// Encode MapKVVF(map[string]uint32).
+	dst = binary.AppendUvarint(dst, uint64(len(s.MapKVVF)))
+	for k, v := range s.MapKVVF {
+		dst = binary.AppendUvarint(dst, uint64(len(k)))
+		dst = append(dst, k...)
+		dst = binary.LittleEndian.AppendUint32(dst, v)
 	}
 
 	return dst
@@ -402,6 +439,110 @@ func StructDecode(s *Struct, src []byte) (err error) {
 					}
 				}
 			}
+		}
+	}
+
+	// Decode MapKFVF(map[uint32]uint32).
+	{
+		size, off := binary.Uvarint(src)
+		if off <= 0 {
+			if off == 0 {
+				return errors.New("decode s.MapKFVF(map[uint32]uint32) length: record buffer is too small")
+			}
+			return errors.New("decode s.MapKFVF(map[uint32]uint32) length: malformed uvarint sequence")
+		}
+		src = src[off:]
+		s.MapKFVF = make(map[uint32]uint32, size)
+		for i := 0; i < int(size); i++ {
+			var k uint32
+			var v uint32
+			if len(src) < 4 {
+				return errors.New("decode k(map[uint32]uint32): record buffer is too small").Uint64("length-required", uint64(4)).Int("length-actual", len(src))
+			}
+			k = binary.LittleEndian.Uint32(src)
+			src = src[4:]
+			if len(src) < 4 {
+				return errors.New("decode v(map[uint32]uint32): record buffer is too small").Uint64("length-required", uint64(4)).Int("length-actual", len(src))
+			}
+			v = binary.LittleEndian.Uint32(src)
+			src = src[4:]
+			s.MapKFVF[k] = v
+		}
+	}
+
+	// Decode MapKFVV(map[uint32]string).
+	{
+		size, off := binary.Uvarint(src)
+		if off <= 0 {
+			if off == 0 {
+				return errors.New("decode s.MapKFVV(map[uint32]string) length: record buffer is too small")
+			}
+			return errors.New("decode s.MapKFVV(map[uint32]string) length: malformed uvarint sequence")
+		}
+		src = src[off:]
+		s.MapKFVV = make(map[uint32]string, size)
+		for i := 0; i < int(size); i++ {
+			var k uint32
+			var v string
+			if len(src) < 4 {
+				return errors.New("decode k(map[uint32]string): record buffer is too small").Uint64("length-required", uint64(4)).Int("length-actual", len(src))
+			}
+			k = binary.LittleEndian.Uint32(src)
+			src = src[4:]
+			{
+				size2, off2 := binary.Uvarint(src)
+				if off2 <= 0 {
+					if off2 == 0 {
+						return errors.New("decode v(map[uint32]string) length: record buffer is too small")
+					}
+					return errors.New("decode v(map[uint32]string) length: malformed uvarint sequence")
+				}
+				src = src[off2:]
+				if int(size2) > len(src) {
+					return errors.New("decode v(map[uint32]string) content: record buffer is too small").Uint64("length-required", uint64(int(size2))).Int("length-actual", len(src))
+				}
+				v = string(src[:size2])
+				src = src[size2:]
+			}
+			s.MapKFVV[k] = v
+		}
+	}
+
+	// Decode MapKVVF(map[string]uint32).
+	{
+		size, off := binary.Uvarint(src)
+		if off <= 0 {
+			if off == 0 {
+				return errors.New("decode s.MapKVVF(map[string]uint32) length: record buffer is too small")
+			}
+			return errors.New("decode s.MapKVVF(map[string]uint32) length: malformed uvarint sequence")
+		}
+		src = src[off:]
+		s.MapKVVF = make(map[string]uint32, size)
+		for i := 0; i < int(size); i++ {
+			var k string
+			var v uint32
+			{
+				size2, off2 := binary.Uvarint(src)
+				if off2 <= 0 {
+					if off2 == 0 {
+						return errors.New("decode k(map[string]uint32) length: record buffer is too small")
+					}
+					return errors.New("decode k(map[string]uint32) length: malformed uvarint sequence")
+				}
+				src = src[off2:]
+				if int(size2) > len(src) {
+					return errors.New("decode k(map[string]uint32) content: record buffer is too small").Uint64("length-required", uint64(int(size2))).Int("length-actual", len(src))
+				}
+				k = string(src[:size2])
+				src = src[size2:]
+			}
+			if len(src) < 4 {
+				return errors.New("decode v(map[string]uint32): record buffer is too small").Uint64("length-required", uint64(4)).Int("length-actual", len(src))
+			}
+			v = binary.LittleEndian.Uint32(src)
+			src = src[4:]
+			s.MapKVVF[k] = v
 		}
 	}
 

@@ -1,7 +1,9 @@
 package handlers
 
-import "github.com/sirkon/fenneg/internal/renderer"
+func isVariadic(t Type) bool {
+	return t.Len() <= 0
+}
 
-func dstExtend(r *renderer.Go, howmuch int) {
-	r.L(`$dst = $dst[:len($dst)+$0]`, howmuch)
+func isFixed(t Type) bool {
+	return t.Len() > 0
 }

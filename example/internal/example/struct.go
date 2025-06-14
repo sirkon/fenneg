@@ -19,4 +19,7 @@ type Struct struct {
 	StringSlice      []string
 	BoolSliceSlice   [][]bool
 	StringSliceSlice [][]string
+	MapKFVF          map[uint32]uint32
+	MapKFVV          map[uint32]string
+	MapKVVF          map[string]uint32
 }

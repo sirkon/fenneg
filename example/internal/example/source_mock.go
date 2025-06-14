@@ -3,10 +3,9 @@
 package example
 
 import (
-	"reflect"
-
 	"github.com/golang/mock/gomock"
 	"github.com/sirkon/deepequal"
+	"reflect"
 )
 
 // SourceMock interface github.com/sirkon/fenneg/example/internal/example.Source mock

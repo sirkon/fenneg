@@ -1,10 +1,11 @@
 package example
 
 import (
-	"github.com/sirkon/deepequal"
-	"github.com/sirkon/errors"
 	"math"
 	"testing"
+
+	"github.com/sirkon/deepequal"
+	"github.com/sirkon/errors"
 )
 
 func TestStruct(t *testing.T) {
@@ -43,6 +44,9 @@ func TestStruct(t *testing.T) {
 			{"a", "b", "c"},
 			{"c", "b", "a"},
 		},
+		MapKFVF: map[uint32]uint32{1: 2, 2: 3},
+		MapKFVV: map[uint32]string{1: "1", 2: "12"},
+		MapKVVF: map[string]uint32{"1": 1, "12": 12},
 	}
 
 	var buf []byte

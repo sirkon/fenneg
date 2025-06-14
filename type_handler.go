@@ -45,9 +45,9 @@ type TypeHandler interface {
 	Len() int
 
 	// LenExpr gives an expression to compute required buffer length
-	// to encode a type being handled. Must be be equal to
+	// to encode a type being handled. Must be equal to
 	//     strconv.Itoa(x.Len())
-	// In case of fixed length, and it is checked.
+	// In case of fixed length, and this is checked.
 	LenExpr(r *Go, src string) string
 
 	// Encoding generates a code that encodes a value of $src into $dst.
