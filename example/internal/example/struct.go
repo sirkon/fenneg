@@ -22,4 +22,10 @@ type Struct struct {
 	MapKFVF          map[uint32]uint32
 	MapKFVV          map[uint32]string
 	MapKVVF          map[string]uint32
+	Struct           StructInternal
+}
+
+type StructInternal struct {
+	A int
+	B string
 }

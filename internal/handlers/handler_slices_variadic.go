@@ -31,7 +31,7 @@ func (s *SlicesVariadic) Name(r *renderer.Go) string {
 
 // Pre to implement TypeHandler.
 func (s *SlicesVariadic) Pre(r *renderer.Go, src string) {
-	key := gogh.Private("len", src)
+	key := gogh.Private(dotIsSep("len", src))
 	uniq := r.Uniq(key)
 	s.lenkey = uniq
 

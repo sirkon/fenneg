@@ -129,7 +129,14 @@ func (h *TypesHandlers) Handler(arg *types.Var) TypeHandler {
 		return handlers.NewSlicesVariadic(hh, t.Elem())
 	case *types.Map:
 		kh := h.Handler(types.NewVar(arg.Pos(), arg.Pkg(), arg.Name(), t.Key()))
+		if kh == nil {
+			break
+		}
 		vh := h.Handler(types.NewVar(arg.Pos(), arg.Pkg(), arg.Name(), t.Elem()))
+		if vh == nil {
+			break
+		}
+
 		return handlers.NewMaps(kh, t.Key(), vh, t.Elem())
 	case *types.Pointer:
 		// TODO add *T support for supported T.

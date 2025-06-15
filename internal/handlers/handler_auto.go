@@ -3,9 +3,9 @@ package handlers
 import (
 	"go/types"
 
-	"github.com/sirkon/gogh"
 	"github.com/sirkon/fenneg/internal/er"
 	"github.com/sirkon/fenneg/internal/renderer"
+	"github.com/sirkon/gogh"
 )
 
 // NewAuto creates a handler of the given type.
@@ -29,7 +29,7 @@ func (a *Auto) Name(r *renderer.Go) string {
 
 // Pre to implement TypeHandler.
 func (a *Auto) Pre(r *renderer.Go, src string) {
-	key := gogh.Private("len", src)
+	key := gogh.Private(dotIsSep("len", src))
 	uniq := r.Uniq(key)
 	r.Imports().Varsize().Ref("vsize")
 	r.L(`$0 := $src.Len()`, uniq)

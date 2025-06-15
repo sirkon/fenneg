@@ -8,7 +8,6 @@ import (
 	"github.com/sirkon/errors"
 	"github.com/sirkon/fenneg/internal/app"
 	"github.com/sirkon/fenneg/internal/generator"
-	"github.com/sirkon/fenneg/internal/handlers"
 	"github.com/sirkon/fenneg/internal/renderer"
 	"github.com/sirkon/gogh"
 	"golang.org/x/tools/go/packages"
@@ -111,7 +110,7 @@ func (r *Runner) Struct(pkg, typ string, optsFn ...Option) error {
 		return errorCannotContinue
 	}
 
-	if !r.checkStruct(s, p, loader) {
+	if !r.checkStruct(s, p, loader, nil) {
 		return errorCannotContinue
 	}
 
@@ -126,13 +125,16 @@ func (r *Runner) Struct(pkg, typ string, optsFn ...Option) error {
 	_, file := filepath.Split(r.fset.Position(tn.Obj().Pos()).Filename)
 	rr := rpkg.Go(strings.TrimSuffix(file, ".go")+"_"+strings.ToLower(opts.FileSuffix)+".go", gogh.Autogen(app.Name))
 
-	manhands := map[*types.Var]handlers.Type{}
-	for i := 0; i < s.NumFields(); i++ {
-		f := s.Field(i)
-		manhands[f] = r.handlers.Handler(f)
-	}
+	manhands := []generator.HandlingTouple{}
+	manhands = structHandlers(manhands, []string{}, s, r)
 	g := generator.NewStruct(
-		rr, tn, manhands, opts.StructPointer, opts.EncoderName, opts.DecoderName, opts.SizeName,
+		rr,
+		tn,
+		manhands,
+		opts.StructPointer,
+		opts.EncoderName,
+		opts.DecoderName,
+		opts.SizeName,
 	)
 
 	g.Generate()
@@ -144,7 +146,18 @@ func (r *Runner) Struct(pkg, typ string, optsFn ...Option) error {
 	return nil
 }
 
-func (r *Runner) checkStruct(s *types.Struct, p *packages.Package, loader *souceLoader) bool {
+func (r *Runner) checkStruct(
+	s *types.Struct,
+	p *packages.Package,
+	loader *souceLoader,
+	inProgress map[*types.Struct]struct{},
+) bool {
+	if inProgress == nil {
+		inProgress = map[*types.Struct]struct{}{s: {}}
+	} else {
+		inProgress[s] = struct{}{}
+	}
+
 	log := r.logger
 	success := true
 
@@ -165,6 +178,18 @@ func (r *Runner) checkStruct(s *types.Struct, p *packages.Package, loader *souce
 		}
 
 		if r.handlers.Handler(f) == nil {
+			sd := getTypeStructDef(f.Type())
+			if _, ok := inProgress[sd]; !ok {
+				if sd != nil {
+					if r.checkStruct(sd, p, loader, inProgress) {
+						continue
+					}
+				}
+			} else {
+				log.Pos(f.Pos(), errors.New("recursive definitions are not supported").Stg("recursive-type", f.Type()))
+				success = false
+				continue
+			}
 			log.Pos(f.Pos(), errors.New("unsupported type").Stg("unsupported-type", f.Type()))
 			success = false
 			continue
@@ -175,4 +200,41 @@ func (r *Runner) checkStruct(s *types.Struct, p *packages.Package, loader *souce
 	r.handlers.setArgsAliases(aliases)
 
 	return success
+}
+
+func getTypeStructDef(t types.Type) (s *types.Struct) {
+	switch v := t.(type) {
+	case *types.Named:
+		return getTypeStructDef(v.Underlying())
+	case *types.Struct:
+		return v
+	default:
+		return nil
+	}
+}
+
+func structHandlers(
+	dst []generator.HandlingTouple,
+	prefix []string,
+	s *types.Struct,
+	r *Runner,
+) []generator.HandlingTouple {
+	for i := 0; i < s.NumFields(); i++ {
+		f := s.Field(i)
+		handler := r.handlers.Handler(f)
+		if handler == nil {
+			sd := getTypeStructDef(f.Type())
+			dst = structHandlers(dst, append(prefix, f.Name()), sd, r)
+			continue
+		}
+		if len(prefix) != 0 {
+			f = types.NewVar(f.Pos(), f.Pkg(), strings.Join(append(prefix, f.Name()), "."), f.Type())
+		}
+		dst = append(dst, generator.HandlingTouple{
+			Var:  f,
+			Hand: handler,
+		})
+	}
+
+	return dst
 }

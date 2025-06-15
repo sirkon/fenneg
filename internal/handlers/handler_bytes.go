@@ -18,7 +18,7 @@ func (b *Bytes) Name(*renderer.Go) string {
 
 // Pre to satisfy Handler.
 func (b *Bytes) Pre(r *renderer.Go, src string) {
-	key := gogh.Private("len", src)
+	key := gogh.Private(dotIsSep("len", src))
 	uniq := r.Uniq(key)
 	r.Imports().Varsize().Ref("vsize")
 	r.L(`$0 := $vsize.Len($src) + len($src)`, uniq)

@@ -58,7 +58,7 @@ func (v *Varint) Name(r *renderer.Go) string {
 
 // Pre to implement TypeHandler.
 func (v *Varint) Pre(r *renderer.Go, src string) {
-	key := gogh.Private("len", src)
+	key := gogh.Private(dotIsSep("len", src))
 	uniq := r.Uniq(key)
 	r.Imports().Varsize().Ref("vsize")
 	r.L(`$0 := $vsize.Int($src)`, uniq)

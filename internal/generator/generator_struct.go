@@ -11,11 +11,16 @@ import (
 	"github.com/sirkon/message"
 )
 
+type HandlingTouple struct {
+	Var  *types.Var
+	Hand handlers.Type
+}
+
 // NewStruct constructs Struct instance.
 func NewStruct(
 	r *renderer.Go,
 	src *types.Named,
-	hands map[*types.Var]handlers.Type,
+	hands []HandlingTouple,
 	pointer bool,
 	encoderName, decoderName, sizeName string,
 ) *Struct {
@@ -36,7 +41,7 @@ type Struct struct {
 
 	argName string
 	src     *types.Named
-	hands   map[*types.Var]handlers.Type
+	hands   []HandlingTouple
 
 	pointer                  bool
 	encoderName, decoderName string
@@ -75,18 +80,12 @@ func (g *Struct) generateLen(r *renderer.Go) {
 		r.L(`	return 0`)
 		r.L(`}`)
 		r.N()
-		s := g.src.Underlying().(*types.Struct)
 
-		for i := 0; i < s.NumFields(); i++ {
-			f := s.Field(i)
-			r.L(`// len $0($1).`, f.Name(), r.T().Type(f.Type()))
-		}
-		r.N()
-
-		lens := make([]string, 0, s.NumFields())
-		for i := 0; i < s.NumFields(); i++ {
-			f := s.Field(i)
-			h := g.hands[f]
+		var lens []string
+		for _, hhh := range g.hands {
+			f := hhh.Var
+			h := hhh.Hand
+			r.N()
 
 			lr := r.Scope()
 			lr.Let("src", g.argName+"."+f.Name())
@@ -133,12 +132,11 @@ func (g *Struct) generateEncoding(r *renderer.Go) {
 		}
 		r.L(`}`)
 		r.N()
-		s := g.src.Underlying().(*types.Struct)
-		for i := 0; i < s.NumFields(); i++ {
-			f := s.Field(i)
-			r.L(`// Encode $0($1).`, f.Name(), r.T().Type(f.Type()))
-			h := g.hands[f]
+		for _, hhh := range g.hands {
+			f := hhh.Var
+			h := hhh.Hand
 
+			r.L(`// Encode $0($1).`, f.Name(), r.T().Type(f.Type()))
 			rr := r.Scope()
 			rr.Let("src", g.argName+"."+f.Name())
 			rr.Let("dst", "dst")
@@ -168,11 +166,9 @@ func (g *Struct) generateDecoding(r *renderer.Go) {
 	}
 
 	fnR.Returns("err", "error").Body(func(r *renderer.Go) {
-		s := g.src.Underlying().(*types.Struct)
-		for i := 0; i < s.NumFields(); i++ {
-			f := s.Field(i)
-			h := g.hands[f]
-
+		for _, hhh := range g.hands {
+			f := hhh.Var
+			h := hhh.Hand
 			r.L(`// Decode $0($1).`, f.Name(), r.T().Type(f.Type()))
 			rr := r.Scope()
 			rr.Let("dst", g.argName+"."+f.Name())

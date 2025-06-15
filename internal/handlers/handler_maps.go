@@ -32,7 +32,7 @@ func (m *MapsUniform) Name(r *renderer.Go) string {
 }
 
 func (m *MapsUniform) Pre(r *renderer.Go, src string) {
-	key := gogh.Private("len", src)
+	key := gogh.Private(dotIsSep("len", src))
 	uniq := r.Uniq(key)
 	m.lenkey = uniq
 

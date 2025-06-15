@@ -15,41 +15,28 @@ func StructLen(s *Struct) int {
 		return 0
 	}
 
-	// len ID(Index).
-	// len ChangeID(Index).
-	// len Repeat(uint32).
-	// len Theme(uint32).
-	// len Data([]byte).
-	// len Pi(float32).
-	// len E(float64).
-	// len Field(string).
-	// len Int(int).
-	// len Uint(uint).
-	// len VarInt(int).
-	// len VarUint(uint).
-	// len BoolSlice([]bool).
-	// len StringSlice([]string).
-	// len BoolSliceSlice([][]bool).
-	// len StringSliceSlice([][]string).
-	// len MapKFVF(map[uint32]uint32).
-	// len MapKFVV(map[uint32]string).
-	// len MapKVVF(map[string]uint32).
-
 	lenData := varsize.Len(s.Data) + len(s.Data)
+
 	lenField := varsize.Uint(uint(len(s.Field))) + len(s.Field)
+
 	lenVarInt := varsize.Int(s.VarInt)
+
 	lenVarUint := varsize.Uint(s.VarUint)
+
 	lenBoolSlice := varsize.Len(s.BoolSlice) + len(s.BoolSlice)*1
+
 	lenStringSlice := varsize.Len(s.StringSlice)
 	for _, item := range s.StringSlice {
 		lenItem := varsize.Uint(uint(len(item))) + len(item)
 		lenStringSlice += lenItem
 	}
+
 	lenBoolSliceSlice := varsize.Len(s.BoolSliceSlice)
 	for _, item := range s.BoolSliceSlice {
 		lenItem := varsize.Len(item) + len(item)*1
 		lenBoolSliceSlice += lenItem
 	}
+
 	lenStringSliceSlice := varsize.Len(s.StringSliceSlice)
 	for _, item := range s.StringSliceSlice {
 		lenItem := varsize.Len(item)
@@ -59,19 +46,24 @@ func StructLen(s *Struct) int {
 		}
 		lenStringSliceSlice += lenItem
 	}
-	lenMapKFVF := len(s.MapKFVF) * (4 + 4)
-	lenMapKFVV := varsize.MapLen(s.MapKFVV) + len(s.MapKFVV)*4
+
+	lenMapKfvf := len(s.MapKFVF) * (4 + 4)
+
+	lenMapKfvv := varsize.MapLen(s.MapKFVV) + len(s.MapKFVV)*4
 	for _, value := range s.MapKFVV {
 		lenValue := varsize.Uint(uint(len(value))) + len(value)
-		lenMapKFVV += lenValue
-	}
-	lenMapKVVF := varsize.MapLen(s.MapKVVF) + len(s.MapKVVF)*4
-	for key := range s.MapKVVF {
-		lenKey := varsize.Uint(uint(len(key))) + len(key)
-		lenMapKVVF += lenKey
+		lenMapKfvv += lenValue
 	}
 
-	return 16 + 16 + 4 + 4 + lenData + 4 + 8 + lenField + 8 + 8 + lenVarInt + lenVarUint + lenBoolSlice + lenStringSlice + lenBoolSliceSlice + lenStringSliceSlice + lenMapKFVF + lenMapKFVV + lenMapKVVF
+	lenMapKvvf := varsize.MapLen(s.MapKVVF) + len(s.MapKVVF)*4
+	for key := range s.MapKVVF {
+		lenKey := varsize.Uint(uint(len(key))) + len(key)
+		lenMapKvvf += lenKey
+	}
+
+	lenStructB := varsize.Uint(uint(len(s.Struct.B))) + len(s.Struct.B)
+
+	return 16 + 16 + 4 + 4 + lenData + 4 + 8 + lenField + 8 + 8 + lenVarInt + lenVarUint + lenBoolSlice + lenStringSlice + lenBoolSliceSlice + lenStringSliceSlice + lenMapKfvf + lenMapKfvv + lenMapKvvf + 8 + lenStructB
 }
 
 func StructEncode(dst []byte, s *Struct) []byte {
@@ -184,6 +176,13 @@ func StructEncode(dst []byte, s *Struct) []byte {
 		dst = append(dst, k...)
 		dst = binary.LittleEndian.AppendUint32(dst, v)
 	}
+
+	// Encode Struct.A(int).
+	dst = binary.LittleEndian.AppendUint64(dst, uint64(s.Struct.A))
+
+	// Encode Struct.B(string).
+	dst = binary.AppendUvarint(dst, uint64(len(s.Struct.B)))
+	dst = append(dst, s.Struct.B...)
 
 	return dst
 }
@@ -544,6 +543,30 @@ func StructDecode(s *Struct, src []byte) (err error) {
 			src = src[4:]
 			s.MapKVVF[k] = v
 		}
+	}
+
+	// Decode Struct.A(int).
+	if len(src) < 8 {
+		return errors.New("decode s.Struct.A(int): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
+	}
+	s.Struct.A = int(binary.LittleEndian.Uint64(src))
+	src = src[8:]
+
+	// Decode Struct.B(string).
+	{
+		size, off := binary.Uvarint(src)
+		if off <= 0 {
+			if off == 0 {
+				return errors.New("decode s.Struct.B(string) length: record buffer is too small")
+			}
+			return errors.New("decode s.Struct.B(string) length: malformed uvarint sequence")
+		}
+		src = src[off:]
+		if int(size) > len(src) {
+			return errors.New("decode s.Struct.B(string) content: record buffer is too small").Uint64("length-required", uint64(int(size))).Int("length-actual", len(src))
+		}
+		s.Struct.B = string(src[:size])
+		src = src[size:]
 	}
 
 	if len(src) > 0 {
