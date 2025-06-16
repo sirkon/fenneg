@@ -110,30 +110,31 @@ This kind of customization is a reason why this thing is a framework rather than
 
 ### List of types supported out of the box.
 
-| type                                        | info                                                                                                        |
-|---------------------------------------------|-------------------------------------------------------------------------------------------------------------|
-| `bool`                                      |                                                                                                             |
-| `int8`                                      |                                                                                                             |
-| `int16`                                     |                                                                                                             |
-| `int32`                                     |                                                                                                             |
-| `int64`                                     |                                                                                                             |
-| `uint8`                                     |                                                                                                             |
-| `uint16`                                    |                                                                                                             |
-| `uint32`                                    |                                                                                                             |
-| `uint64`                                    |                                                                                                             |
-| `intypes.VI16`                              | This and all V.. below are just aliases for respective<br>integer types to force variadic encoding on them. |
-| `intypes.VI32`                              |                                                                                                             |
-| `intypes.VI64`                              |                                                                                                             |
-| `intypes.VU16`                              |                                                                                                             |
-| `intypes.VU32`                              |                                                                                                             |
-| `intypes.VU64`                              |                                                                                                             |
-| `float32`                                   |                                                                                                             |
-| `float64`                                   |                                                                                                             |
-| `[N]byte`                                   |                                                                                                             |
-| `[]byte`                                    |                                                                                                             |
-| `string`                                    |                                                                                                             |
-| `[]T`                                       | Where `T` is supported.                                                                                     |
-| `map[K]V`                                   | Where both `K` and `V` are supported.                                                                       |
+| type           | info                                                                                                       |
+|----------------|------------------------------------------------------------------------------------------------------------|
+| `bool`         |                                                                                                            |
+| `int8`         |                                                                                                            |
+| `int16`        |                                                                                                            |
+| `int32`        |                                                                                                            |
+| `int64`        |                                                                                                            |
+| `uint8`        |                                                                                                            |
+| `uint16`       |                                                                                                            |
+| `uint32`       |                                                                                                            |
+| `uint64`       |                                                                                                            |
+| `intypes.VI16` | This and all V.. below are just aliases for respective<br>integer types to force variadic encoding on them. |
+| `intypes.VI32` |                                                                                                            |
+| `intypes.VI64` |                                                                                                            |
+| `intypes.VU16` |                                                                                                            |
+| `intypes.VU32` |                                                                                                            |
+| `intypes.VU64` |                                                                                                            |
+| `float32`      |                                                                                                            |
+| `float64`      |                                                                                                            |
+| `[N]byte`      |                                                                                                            |
+| `[]byte`       |                                                                                                            |
+| `string`       |                                                                                                            |
+| `[]T`          | Where `T` is supported.                                                                                    |
+| `map[K]V`      | Where both `K` and `V` are supported.                                                                      |
+| struct types   | Where all fields have supported types.                                                                     |
 
 Here:
 
