@@ -196,9 +196,9 @@ graph TD
     encd[Encode data into the buffer]
     stor[Save buffer]
     
-    size --> allc %% Relies on user defined method.
-    allc --> encd %% Relies on generated code. 
-    encd --> stor %% Relies on user defined method.
+    size --> allc 
+    allc --> encd 
+    encd --> stor 
 ```
 
 # Structures binary flat encoding and decoding.
