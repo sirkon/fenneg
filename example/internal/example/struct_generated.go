@@ -61,9 +61,57 @@ func StructLen(s *Struct) int {
 		lenMapKvvf += lenKey
 	}
 
-	lenStructB := varsize.Uint(uint(len(s.Struct.B))) + len(s.Struct.B)
+	var lenStruct int
+	{
+		lenStruct += 8
+		lenSStructB := varsize.Uint(uint(len(s.Struct.B))) + len(s.Struct.B)
+		lenStruct += lenSStructB
+	}
 
-	return 16 + 16 + 4 + 4 + lenData + 4 + 8 + lenField + 8 + 8 + lenVarInt + lenVarUint + lenBoolSlice + lenStringSlice + lenBoolSliceSlice + lenStringSliceSlice + lenMapKfvf + lenMapKfvv + lenMapKvvf + 8 + lenStructB
+	lenStructSlice := varsize.Len(s.StructSlice)
+	for _, item := range s.StructSlice {
+		var lenItem int
+		{
+			lenItem += 8
+			lenItemB := varsize.Uint(uint(len(item.B))) + len(item.B)
+			lenItem += lenItemB
+		}
+
+		lenStructSlice += lenItem
+	}
+
+	lenStructMapInt := varsize.MapLen(s.StructMapInt) + len(s.StructMapInt)*8
+	for _, value := range s.StructMapInt {
+		var lenValue int
+		{
+			lenValue += 8
+			lenValueB := varsize.Uint(uint(len(value.B))) + len(value.B)
+			lenValue += lenValueB
+		}
+
+		lenStructMapInt += lenValue
+	}
+
+	lenStructMapStruct := varsize.MapLen(s.StructMapStruct)
+	for key, value := range s.StructMapStruct {
+		var lenKey int
+		{
+			lenKey += 8
+			lenKeyB := varsize.Uint(uint(len(key.B))) + len(key.B)
+			lenKey += lenKeyB
+		}
+
+		var lenValue int
+		{
+			lenValue += 8
+			lenValueB := varsize.Uint(uint(len(value.B))) + len(value.B)
+			lenValue += lenValueB
+		}
+
+		lenStructMapStruct += lenKey + lenValue
+	}
+
+	return 16 + 16 + 4 + 4 + lenData + 4 + 8 + lenField + 8 + 8 + lenVarInt + lenVarUint + lenBoolSlice + lenStringSlice + lenBoolSliceSlice + lenStringSliceSlice + lenMapKfvf + lenMapKfvv + lenMapKvvf + lenStruct + lenStructSlice + lenStructMapInt + lenStructMapStruct
 }
 
 func StructEncode(dst []byte, s *Struct) []byte {
@@ -177,12 +225,38 @@ func StructEncode(dst []byte, s *Struct) []byte {
 		dst = binary.LittleEndian.AppendUint32(dst, v)
 	}
 
-	// Encode Struct.A(int).
+	// Encode Struct(StructInternal).
 	dst = binary.LittleEndian.AppendUint64(dst, uint64(s.Struct.A))
-
-	// Encode Struct.B(string).
 	dst = binary.AppendUvarint(dst, uint64(len(s.Struct.B)))
 	dst = append(dst, s.Struct.B...)
+
+	// Encode StructSlice([]StructInternal).
+	dst = binary.AppendUvarint(dst, uint64(len(s.StructSlice)))
+	for _, v := range s.StructSlice {
+		dst = binary.LittleEndian.AppendUint64(dst, uint64(v.A))
+		dst = binary.AppendUvarint(dst, uint64(len(v.B)))
+		dst = append(dst, v.B...)
+	}
+
+	// Encode StructMapInt(map[int]StructInternal).
+	dst = binary.AppendUvarint(dst, uint64(len(s.StructMapInt)))
+	for k, v := range s.StructMapInt {
+		dst = binary.LittleEndian.AppendUint64(dst, uint64(k))
+		dst = binary.LittleEndian.AppendUint64(dst, uint64(v.A))
+		dst = binary.AppendUvarint(dst, uint64(len(v.B)))
+		dst = append(dst, v.B...)
+	}
+
+	// Encode StructMapStruct(map[StructInternal]StructInternal).
+	dst = binary.AppendUvarint(dst, uint64(len(s.StructMapStruct)))
+	for k, v := range s.StructMapStruct {
+		dst = binary.LittleEndian.AppendUint64(dst, uint64(k.A))
+		dst = binary.AppendUvarint(dst, uint64(len(k.B)))
+		dst = append(dst, k.B...)
+		dst = binary.LittleEndian.AppendUint64(dst, uint64(v.A))
+		dst = binary.AppendUvarint(dst, uint64(len(v.B)))
+		dst = append(dst, v.B...)
+	}
 
 	return dst
 }
@@ -545,28 +619,162 @@ func StructDecode(s *Struct, src []byte) (err error) {
 		}
 	}
 
-	// Decode Struct.A(int).
+	// Decode Struct(StructInternal).
 	if len(src) < 8 {
-		return errors.New("decode s.Struct.A(int): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
+		return errors.New("decode s.Struct.A(StructInternal): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
 	}
 	s.Struct.A = int(binary.LittleEndian.Uint64(src))
 	src = src[8:]
-
-	// Decode Struct.B(string).
 	{
 		size, off := binary.Uvarint(src)
 		if off <= 0 {
 			if off == 0 {
-				return errors.New("decode s.Struct.B(string) length: record buffer is too small")
+				return errors.New("decode s.Struct.B(StructInternal) length: record buffer is too small")
 			}
-			return errors.New("decode s.Struct.B(string) length: malformed uvarint sequence")
+			return errors.New("decode s.Struct.B(StructInternal) length: malformed uvarint sequence")
 		}
 		src = src[off:]
 		if int(size) > len(src) {
-			return errors.New("decode s.Struct.B(string) content: record buffer is too small").Uint64("length-required", uint64(int(size))).Int("length-actual", len(src))
+			return errors.New("decode s.Struct.B(StructInternal) content: record buffer is too small").Uint64("length-required", uint64(int(size))).Int("length-actual", len(src))
 		}
 		s.Struct.B = string(src[:size])
 		src = src[size:]
+	}
+
+	// Decode StructSlice([]StructInternal).
+	{
+		size, off := binary.Uvarint(src)
+		if off <= 0 {
+			if off == 0 {
+				return errors.New("decode s.StructSlice([]StructInternal) length: record buffer is too small")
+			}
+			return errors.New("decode s.StructSlice([]StructInternal) length: malformed uvarint sequence")
+		}
+		src = src[off:]
+		s.StructSlice = make([]StructInternal, size)
+		for i := 0; i < int(size); i++ {
+			if len(src) < 8 {
+				return errors.New("decode s.StructSlice[i].A([]StructInternal): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
+			}
+			s.StructSlice[i].A = int(binary.LittleEndian.Uint64(src))
+			src = src[8:]
+			{
+				size2, off2 := binary.Uvarint(src)
+				if off2 <= 0 {
+					if off2 == 0 {
+						return errors.New("decode s.StructSlice[i].B([]StructInternal) length: record buffer is too small")
+					}
+					return errors.New("decode s.StructSlice[i].B([]StructInternal) length: malformed uvarint sequence")
+				}
+				src = src[off2:]
+				if int(size2) > len(src) {
+					return errors.New("decode s.StructSlice[i].B([]StructInternal) content: record buffer is too small").Uint64("length-required", uint64(int(size2))).Int("length-actual", len(src))
+				}
+				s.StructSlice[i].B = string(src[:size2])
+				src = src[size2:]
+			}
+		}
+	}
+
+	// Decode StructMapInt(map[int]StructInternal).
+	{
+		size, off := binary.Uvarint(src)
+		if off <= 0 {
+			if off == 0 {
+				return errors.New("decode s.StructMapInt(map[int]StructInternal) length: record buffer is too small")
+			}
+			return errors.New("decode s.StructMapInt(map[int]StructInternal) length: malformed uvarint sequence")
+		}
+		src = src[off:]
+		s.StructMapInt = make(map[int]StructInternal, size)
+		for i := 0; i < int(size); i++ {
+			var k int
+			var v StructInternal
+			if len(src) < 8 {
+				return errors.New("decode k(map[int]StructInternal): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
+			}
+			k = int(binary.LittleEndian.Uint64(src))
+			src = src[8:]
+			if len(src) < 8 {
+				return errors.New("decode v.A(map[int]StructInternal): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
+			}
+			v.A = int(binary.LittleEndian.Uint64(src))
+			src = src[8:]
+			{
+				size2, off2 := binary.Uvarint(src)
+				if off2 <= 0 {
+					if off2 == 0 {
+						return errors.New("decode v.B(map[int]StructInternal) length: record buffer is too small")
+					}
+					return errors.New("decode v.B(map[int]StructInternal) length: malformed uvarint sequence")
+				}
+				src = src[off2:]
+				if int(size2) > len(src) {
+					return errors.New("decode v.B(map[int]StructInternal) content: record buffer is too small").Uint64("length-required", uint64(int(size2))).Int("length-actual", len(src))
+				}
+				v.B = string(src[:size2])
+				src = src[size2:]
+			}
+			s.StructMapInt[k] = v
+		}
+	}
+
+	// Decode StructMapStruct(map[StructInternal]StructInternal).
+	{
+		size, off := binary.Uvarint(src)
+		if off <= 0 {
+			if off == 0 {
+				return errors.New("decode s.StructMapStruct(map[StructInternal]StructInternal) length: record buffer is too small")
+			}
+			return errors.New("decode s.StructMapStruct(map[StructInternal]StructInternal) length: malformed uvarint sequence")
+		}
+		src = src[off:]
+		s.StructMapStruct = make(map[StructInternal]StructInternal, size)
+		for i := 0; i < int(size); i++ {
+			var k StructInternal
+			var v StructInternal
+			if len(src) < 8 {
+				return errors.New("decode k.A(map[StructInternal]StructInternal): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
+			}
+			k.A = int(binary.LittleEndian.Uint64(src))
+			src = src[8:]
+			{
+				size2, off2 := binary.Uvarint(src)
+				if off2 <= 0 {
+					if off2 == 0 {
+						return errors.New("decode k.B(map[StructInternal]StructInternal) length: record buffer is too small")
+					}
+					return errors.New("decode k.B(map[StructInternal]StructInternal) length: malformed uvarint sequence")
+				}
+				src = src[off2:]
+				if int(size2) > len(src) {
+					return errors.New("decode k.B(map[StructInternal]StructInternal) content: record buffer is too small").Uint64("length-required", uint64(int(size2))).Int("length-actual", len(src))
+				}
+				k.B = string(src[:size2])
+				src = src[size2:]
+			}
+			if len(src) < 8 {
+				return errors.New("decode v.A(map[StructInternal]StructInternal): record buffer is too small").Uint64("length-required", uint64(8)).Int("length-actual", len(src))
+			}
+			v.A = int(binary.LittleEndian.Uint64(src))
+			src = src[8:]
+			{
+				size2, off2 := binary.Uvarint(src)
+				if off2 <= 0 {
+					if off2 == 0 {
+						return errors.New("decode v.B(map[StructInternal]StructInternal) length: record buffer is too small")
+					}
+					return errors.New("decode v.B(map[StructInternal]StructInternal) length: malformed uvarint sequence")
+				}
+				src = src[off2:]
+				if int(size2) > len(src) {
+					return errors.New("decode v.B(map[StructInternal]StructInternal) content: record buffer is too small").Uint64("length-required", uint64(int(size2))).Int("length-actual", len(src))
+				}
+				v.B = string(src[:size2])
+				src = src[size2:]
+			}
+			s.StructMapStruct[k] = v
+		}
 	}
 
 	if len(src) > 0 {

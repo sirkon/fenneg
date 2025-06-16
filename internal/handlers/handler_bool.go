@@ -5,7 +5,7 @@ import (
 	"github.com/sirkon/fenneg/internal/renderer"
 )
 
-// Bool handlers bool type.
+// Bool tuples bool type.
 type Bool struct{}
 
 // Name to implement TypeHandler.

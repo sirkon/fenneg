@@ -1,2 +1,2 @@
-// Package handlers for builtin types.
+// Package tuples for builtin types.
 package handlers

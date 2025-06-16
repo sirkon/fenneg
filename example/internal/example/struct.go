@@ -23,6 +23,9 @@ type Struct struct {
 	MapKFVV          map[uint32]string
 	MapKVVF          map[string]uint32
 	Struct           StructInternal
+	StructSlice      []StructInternal
+	StructMapInt     map[int]StructInternal
+	StructMapStruct  map[StructInternal]StructInternal
 }
 
 type StructInternal struct {

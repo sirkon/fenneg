@@ -67,8 +67,8 @@ func (m *MapsUniform) Pre(r *renderer.Go, src string) {
 		return
 	}
 
-	r.L(`$0 := $vsize.MapLen($src)`)
-	r.L(`for _, $0 := range $src{`)
+	r.L(`$0 := $vsize.MapLen($src)`, m.lenkey)
+	r.L(`for $0, $1 := range $src{`, item, val)
 	r = r.Scope()
 	r.Let("src", item)
 	m.khandler.Pre(r, item)

@@ -8,50 +8,63 @@ import (
 	"github.com/sirkon/gogh"
 )
 
-// SlicesUniform []T types support for supported types T with fixed length encoding.
-type SlicesUniform struct {
+// Slices []T types support for supported types T.
+type Slices struct {
 	handler  Type
 	itemType types.Type
 
 	lenkey string
 }
 
-// NewSlicesUniform construct SliceUniform handler.
-func NewSlicesUniform(handler Type, itemType types.Type) *SlicesUniform {
-	return &SlicesUniform{
+// NewSlices constructs Slices handler.
+func NewSlices(handler Type, itemType types.Type) *Slices {
+	return &Slices{
 		handler:  handler,
 		itemType: itemType,
 	}
 }
 
 // Name to implement TypeHandler.
-func (s *SlicesUniform) Name(r *renderer.Go) string {
+func (s *Slices) Name(r *renderer.Go) string {
 	return "[]" + s.handler.Name(r)
 }
 
 // Pre to implement TypeHandler.
-func (s *SlicesUniform) Pre(r *renderer.Go, src string) {
+func (s *Slices) Pre(r *renderer.Go, src string) {
 	key := gogh.Private(dotIsSep("len", src))
 	uniq := r.Uniq(key)
-	r.Imports().Varsize().Ref("vsize")
-	r.L(`$0 := $vsize.Len($src) + len($src)*$1`, uniq, s.handler.Len())
 	s.lenkey = uniq
+
+	if isFixed(s.handler) {
+		r.L(`$0 := $vsize.Len($src) + len($src)*$1`, uniq, s.handler.Len())
+		return
+	}
+
+	item := r.Uniq("item", src)
+	r.Imports().Varsize().Ref("vsize")
+	r.L(`$0 := $vsize.Len($src)`, uniq)
+	r.L(`for _, $0 := range $src { `, item)
+	r = r.Scope()
+	r.Let("src", item)
+	s.handler.Pre(r, item)
+	r.L(`    $0 += $1`, uniq, s.handler.LenExpr(r, item))
+	r.L(`}`)
 }
 
 // Len to implement TypeHandler.
-func (s *SlicesUniform) Len() int {
+func (s *Slices) Len() int {
 	return -1
 }
 
 // LenExpr to implement TypeHandler.
-func (s *SlicesUniform) LenExpr(r *renderer.Go, src string) string {
+func (s *Slices) LenExpr(r *renderer.Go, src string) string {
 	return s.lenkey
 }
 
 // Encoding to implement TypeHandler.
-func (s *SlicesUniform) Encoding(r *renderer.Go, dst, src string) {
-	r = r.Scope()
+func (s *Slices) Encoding(r *renderer.Go, dst, src string) {
 	r.Imports().Binary().Ref("bin")
+	r = r.Scope()
 
 	r.L(`$dst = $bin.AppendUvarint($dst, uint64(len($src)))`)
 
@@ -63,7 +76,7 @@ func (s *SlicesUniform) Encoding(r *renderer.Go, dst, src string) {
 }
 
 // Decoding to implement TypeHandler.
-func (s *SlicesUniform) Decoding(r *renderer.Go, dst, src string) bool {
+func (s *Slices) Decoding(r *renderer.Go, dst, src string) bool {
 	r = r.Scope()
 
 	off := r.Uniq("off")
@@ -86,8 +99,13 @@ func (s *SlicesUniform) Decoding(r *renderer.Go, dst, src string) bool {
 	it := r.Uniq("i")
 	r.Let("dst", r.S("$dst[$0]", it))
 	r.L(`    for $0 := 0; $0 < int($siz); $0++ {`, it)
-	s.handler.Decoding(r, dst, src)
-	r.L(`        $src = $src[$0:]`, s.handler.Len())
+	{
+		r := r.Scope()
+		s.handler.Decoding(r, dst+"["+it+"]", src)
+	}
+	if isFixed(s.handler) {
+		r.L(`        $src = $src[$0:]`, s.handler.Len())
+	}
 	r.L(`    }`)
 	r.L(`}`)
 

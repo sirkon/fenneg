@@ -114,7 +114,7 @@ func (h *TypesHandlers) Handler(arg *types.Var) TypeHandler {
 		}
 	}
 
-	// Type support was not found. May be it is a container of supported types or a pointer to it?
+	// Type support was not found. May be it is a container of supported types or a pointer to it or a struct?
 	switch t := arg.Type().(type) {
 	case *types.Slice:
 		hh := h.Handler(types.NewVar(arg.Pos(), arg.Pkg(), arg.Name(), t.Elem()))
@@ -122,11 +122,7 @@ func (h *TypesHandlers) Handler(arg *types.Var) TypeHandler {
 			break
 		}
 
-		if hh.Len() > 0 {
-			return handlers.NewSlicesUniform(hh, t.Elem())
-		}
-
-		return handlers.NewSlicesVariadic(hh, t.Elem())
+		return handlers.NewSlices(hh, t.Elem())
 	case *types.Map:
 		kh := h.Handler(types.NewVar(arg.Pos(), arg.Pkg(), arg.Name(), t.Key()))
 		if kh == nil {
@@ -138,6 +134,29 @@ func (h *TypesHandlers) Handler(arg *types.Var) TypeHandler {
 		}
 
 		return handlers.NewMaps(kh, t.Key(), vh, t.Elem())
+	case *types.Named:
+		s, ok := t.Underlying().(*types.Struct)
+		if !ok {
+			break
+		}
+
+		sh := handlers.NewStruct(t)
+		for i := 0; i < s.NumFields(); i++ {
+			f := s.Field(i)
+			fh := h.Handler(f)
+			sh.AddField(f.Name(), f.Type(), fh)
+		}
+
+		return sh
+	case *types.Struct:
+		sh := handlers.NewStruct(t)
+		for i := 0; i < t.NumFields(); i++ {
+			f := t.Field(i)
+			fh := h.Handler(f)
+			sh.AddField(f.Name(), f.Type(), fh)
+		}
+
+		return sh
 	case *types.Pointer:
 		// TODO add *T support for supported T.
 	}

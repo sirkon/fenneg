@@ -178,18 +178,6 @@ func (r *Runner) checkStruct(
 		}
 
 		if r.handlers.Handler(f) == nil {
-			sd := getTypeStructDef(f.Type())
-			if _, ok := inProgress[sd]; !ok {
-				if sd != nil {
-					if r.checkStruct(sd, p, loader, inProgress) {
-						continue
-					}
-				}
-			} else {
-				log.Pos(f.Pos(), errors.New("recursive definitions are not supported").Stg("recursive-type", f.Type()))
-				success = false
-				continue
-			}
 			log.Pos(f.Pos(), errors.New("unsupported type").Stg("unsupported-type", f.Type()))
 			success = false
 			continue

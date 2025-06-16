@@ -51,6 +51,42 @@ func TestStruct(t *testing.T) {
 			A: 123,
 			B: "Hello!",
 		},
+		StructSlice: []StructInternal{
+			{
+				A: 12,
+				B: "Hello",
+			},
+			{
+				A: 78,
+				B: "World",
+			},
+		},
+		StructMapInt: map[int]StructInternal{
+			1: {
+				A: 21,
+				B: "olleH",
+			},
+			300: {
+				A: 87,
+				B: "dlorW",
+			},
+		},
+		StructMapStruct: map[StructInternal]StructInternal{
+			{
+				A: 12,
+				B: "Hello",
+			}: {
+				A: 21,
+				B: "olleH",
+			},
+			{
+				A: 78,
+				B: "World",
+			}: {
+				A: 87,
+				B: "dlroW",
+			},
+		},
 	}
 
 	var buf []byte
