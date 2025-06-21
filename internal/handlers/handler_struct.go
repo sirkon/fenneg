@@ -89,13 +89,12 @@ func (s *HandlerStruct) Decoding(r *renderer.Go, dst, src string) bool {
 		r := r.Scope()
 		fieldDst := dst + "." + tpl.name
 		r.Let("dst", fieldDst)
-		tpl.handler.Decoding(r, fieldDst, src)
-		if isFixed(tpl.handler) {
+		if !tpl.handler.Decoding(r, fieldDst, src) {
 			r.L(`$src = $src[$0:]`, tpl.handler.Len())
 		}
 	}
 
-	return isVariadic(s)
+	return true
 }
 
 // AddField add field info.

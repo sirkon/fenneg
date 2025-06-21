@@ -101,10 +101,9 @@ func (s *Slices) Decoding(r *renderer.Go, dst, src string) bool {
 	r.L(`    for $0 := 0; $0 < int($siz); $0++ {`, it)
 	{
 		r := r.Scope()
-		s.handler.Decoding(r, dst+"["+it+"]", src)
-	}
-	if isFixed(s.handler) {
-		r.L(`        $src = $src[$0:]`, s.handler.Len())
+		if !s.handler.Decoding(r, dst+"["+it+"]", src) {
+			r.L(`        $src = $src[$0:]`, s.handler.Len())
+		}
 	}
 	r.L(`    }`)
 	r.L(`}`)
