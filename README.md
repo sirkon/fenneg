@@ -262,4 +262,4 @@ have your custom type that handles no data left case.
 
 - [ ] Support types definitions where an underlying type is one of the builtins.
 - [ ] Provide support for pointers over numeric, boolean and string types + nil []byte values.
-- [ ] Provide auto-support for struct types where all fields are supported.
+- [x] Provide auto-support for struct types where all fields are supported.
