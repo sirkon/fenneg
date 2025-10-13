@@ -3,12 +3,33 @@ package logger
 import (
 	"bytes"
 	"fmt"
+	"go/token"
 	"strconv"
+
+	"github.com/sirkon/errors"
 )
 
 type errorContextConsumer struct {
 	buf *bytes.Buffer
 	p   string
+}
+
+func (e *errorContextConsumer) NextLink() {}
+
+func (e *errorContextConsumer) Flt32(name string, value float32) {
+	e.Float32(name, value)
+}
+
+func (e *errorContextConsumer) Flt64(name string, value float64) {
+	e.Float64(name, value)
+}
+
+func (e *errorContextConsumer) Str(name string, value string) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (e *errorContextConsumer) SetLinkInfo(loc token.Position, descr errors.ErrorChainLinkDescriptor) {
 }
 
 func (e *errorContextConsumer) print(name string, value string) {

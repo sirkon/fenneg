@@ -8,10 +8,11 @@ import (
 	"sync"
 
 	"github.com/sirkon/errors"
-	"github.com/sirkon/fenneg/internal/tdetect"
 	"github.com/sirkon/gogh"
 	"github.com/sirkon/jsonexec"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/sirkon/fenneg/internal/tdetect"
 )
 
 type typeGetter func(p *packages.Package, name string) (*types.Named, error)
@@ -447,11 +448,11 @@ func validateMethod(logger LoggerType, s *types.Signature, checkRes bool) bool {
 	return noerrs
 }
 
-func errorPlatformDependent(what string) errors.Error {
+func errorPlatformDependent(what string) *errors.Error {
 	return errors.Newf("type %s is platform dependent and not supported", what)
 }
 
-func errorMeaningful(descr string) errors.Error {
+func errorMeaningful(descr string) *errors.Error {
 	return errors.Newf("types are required to have meaningful zero value and %s", descr)
 }
 

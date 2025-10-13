@@ -1,21 +1,21 @@
 module github.com/sirkon/fenneg
 
-go 1.22
+go 1.24.0
 
 require (
 	github.com/alecthomas/kong v0.7.1
 	github.com/facette/natsort v0.0.0-20181210072756-2cd4dd1e2dcb
 	github.com/golang/mock v1.6.0
 	github.com/sirkon/deepequal v0.5.5
-	github.com/sirkon/errors v0.5.0
+	github.com/sirkon/errors v1.0.0
 	github.com/sirkon/gogh v0.24.0
 	github.com/sirkon/intypes v0.1.0
 	github.com/sirkon/jsonexec v0.0.5
-	github.com/sirkon/message v1.6.1
+	github.com/sirkon/message v1.7.0
 	github.com/sirkon/testlog v0.1.0
 	github.com/sirkon/varsize v0.1.0
 	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
-	golang.org/x/tools v0.23.0
+	golang.org/x/tools v0.38.0
 )
 
 require (
@@ -29,7 +29,7 @@ require (
 	github.com/sirkon/protoast v0.29.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/stretchr/testify v1.7.1 // indirect
-	golang.org/x/mod v0.19.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )
