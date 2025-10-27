@@ -4,13 +4,17 @@ import (
 	"go/types"
 
 	"github.com/sirkon/errors"
-	"github.com/sirkon/fenneg"
 	"github.com/sirkon/message"
+
+	"github.com/sirkon/fenneg"
 )
 
 const examplePkg = "github.com/sirkon/fenneg/example/internal/example"
 
 func main() {
+	errors.InsertLocations()
+	message.SetVerbosityLevelFullContext()
+
 	hnlrs, err := fenneg.NewTypesHandlers(
 		// Add custom handler for the example.Index type
 		fenneg.NewTypeHandler(
@@ -59,5 +63,8 @@ func main() {
 
 	if err := r.Struct(examplePkg, "Struct"); err != nil {
 		message.Critical(errors.Wrap(err, "process struct"))
+	}
+	if err := r.Struct(examplePkg, "Perfcheck"); err != nil {
+		message.Critical(errors.Wrap(err, "process Perfcheck struct"))
 	}
 }

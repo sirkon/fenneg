@@ -4,14 +4,15 @@ import (
 	"go/types"
 
 	"github.com/sirkon/errors"
+	"github.com/sirkon/gogh"
+	"github.com/sirkon/message"
+	"golang.org/x/tools/go/packages"
+
 	"github.com/sirkon/fenneg/internal/app"
 	"github.com/sirkon/fenneg/internal/generator"
 	"github.com/sirkon/fenneg/internal/handlers"
 	"github.com/sirkon/fenneg/internal/logger"
 	"github.com/sirkon/fenneg/internal/tdetect"
-	"github.com/sirkon/gogh"
-	"github.com/sirkon/message"
-	"golang.org/x/tools/go/packages"
 )
 
 // RunnerOpLog oplog codegen runner.
@@ -51,7 +52,6 @@ func (r *RunnerOpLog) Run() error {
 		return errors.Wrap(err, "set up renderer")
 	}
 
-	r.r.handlers.setArgsAliases(gargs.types)
 	h, err := getOpLogArgsHandlers(log, gargs.src.Underlying().(*types.Interface), r.r.handlers)
 	if err != nil {
 		return errors.Wrap(err, "set up arguments types handlers")
@@ -231,9 +231,9 @@ outer:
 //  2. check if writeBuffer([]byte) <tuple> is here, this is optional.
 //
 // Result values:
-//  - aret is a result tuple of the allocateBuffer.
-//  - wret is a result tuple of the writeBuffer if it does exist.
-//  - err != nil if checks haven't passed.
+//   - aret is a result tuple of the allocateBuffer.
+//   - wret is a result tuple of the writeBuffer if it does exist.
+//   - err != nil if checks haven't passed.
 func checkOpLogTypesPrerequisites(
 	l LoggerType,
 	typ *types.Named,

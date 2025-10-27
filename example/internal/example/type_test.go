@@ -86,7 +86,7 @@ func checkLength(buf []byte) ([]byte, error) {
 	}
 
 	if l != uint64(len(buf)-off) {
-		var e errors.Error
+		var e *errors.Error
 		if l > uint64(len(buf)-off) {
 			e = errors.New("record length encoded is larger than the length of the actual data")
 		} else {

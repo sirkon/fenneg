@@ -25,8 +25,7 @@ func (e *errorContextConsumer) Flt64(name string, value float64) {
 }
 
 func (e *errorContextConsumer) Str(name string, value string) {
-	//TODO implement me
-	panic("implement me")
+	e.String(name, value)
 }
 
 func (e *errorContextConsumer) SetLinkInfo(loc token.Position, descr errors.ErrorChainLinkDescriptor) {

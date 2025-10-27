@@ -6,11 +6,12 @@ import (
 	"strings"
 
 	"github.com/sirkon/errors"
+	"github.com/sirkon/gogh"
+	"golang.org/x/tools/go/packages"
+
 	"github.com/sirkon/fenneg/internal/app"
 	"github.com/sirkon/fenneg/internal/generator"
 	"github.com/sirkon/fenneg/internal/renderer"
-	"github.com/sirkon/gogh"
-	"golang.org/x/tools/go/packages"
 )
 
 type options struct {
@@ -161,7 +162,6 @@ func (r *Runner) checkStruct(
 	log := r.logger
 	success := true
 
-	aliases := map[*types.Var]*types.Named{}
 	for i := 0; i < s.NumFields(); i++ {
 		f := s.Field(i)
 
@@ -182,10 +182,7 @@ func (r *Runner) checkStruct(
 			success = false
 			continue
 		}
-
-		aliases[f] = loader.digForAliases(p, f)
 	}
-	r.handlers.setArgsAliases(aliases)
 
 	return success
 }

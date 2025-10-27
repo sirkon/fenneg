@@ -6,10 +6,11 @@ import (
 	"go/types"
 
 	"github.com/sirkon/errors"
-	"github.com/sirkon/fenneg/internal/handlers"
-	"github.com/sirkon/fenneg/internal/tdetect"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
+
+	"github.com/sirkon/fenneg/internal/handlers"
+	"github.com/sirkon/fenneg/internal/tdetect"
 )
 
 var builtinSupport = map[string]func() TypeHandler{}
@@ -48,8 +49,6 @@ type TypesHandlers struct {
 	fset     *token.FileSet
 	fixed    map[string]func() TypeHandler
 	handlers []func(typ types.Type) TypeHandler
-
-	taliases map[*types.Var]*types.Named
 }
 
 // TypeHandlerByName adds this custom handler for the given type.
@@ -92,9 +91,6 @@ func (h *TypesHandlers) Handler(arg *types.Var) TypeHandler {
 	var name string
 
 	typ := arg.Type()
-	if v, ok := h.taliases[arg]; ok && v != nil {
-		typ = v
-	}
 
 	switch v := typ.(type) {
 	case *types.Basic:
@@ -134,6 +130,32 @@ func (h *TypesHandlers) Handler(arg *types.Var) TypeHandler {
 		}
 
 		return handlers.NewMaps(kh, t.Key(), vh, t.Elem())
+	case *types.Alias:
+		if t.Obj().Pkg().Path() != inttypesPkgPath {
+			break
+		}
+
+		switch t.Obj().Name() {
+		case "VI":
+			return handlers.ArchVarint()
+		case "VI16":
+			return handlers.Varint16()
+		case "VI32":
+			return handlers.Varint32()
+		case "VI64":
+			return handlers.Varint64()
+		case "VU":
+			return handlers.ArchUvarint()
+		case "VU16":
+			return handlers.Uvarint16()
+		case "VU32":
+			return handlers.Uvarint32()
+		case "VU64":
+			return handlers.Uvarint64()
+		default:
+			break
+		}
+
 	case *types.Named:
 		s, ok := t.Underlying().(*types.Struct)
 		if !ok {
@@ -157,8 +179,10 @@ func (h *TypesHandlers) Handler(arg *types.Var) TypeHandler {
 		}
 
 		return sh
+
 	case *types.Pointer:
 		// TODO add *T support for supported T.
+
 	}
 
 	return nil
@@ -166,18 +190,6 @@ func (h *TypesHandlers) Handler(arg *types.Var) TypeHandler {
 
 func (h *TypesHandlers) fs() *token.FileSet {
 	return h.fset
-}
-
-func (h *TypesHandlers) ifVarInt(arg *types.Var) string {
-	if t, ok := h.taliases[arg]; ok {
-		return t.String()
-	}
-
-	return arg.Type().String()
-}
-
-func (h *TypesHandlers) setArgsAliases(p map[*types.Var]*types.Named) {
-	h.taliases = p
 }
 
 func init() {
@@ -251,7 +263,7 @@ func init() {
 
 		// varints
 		func(p types.Type) TypeHandler {
-			v, ok := p.(*types.Named)
+			v, ok := p.(*types.Alias)
 			if !ok {
 				return nil
 			}
