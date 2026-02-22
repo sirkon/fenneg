@@ -134,41 +134,28 @@ func PerfcheckCopyEncode(dst []byte, p *Perfcheck) []byte {
 
 // PerfcheckDecode decodes content of Perfcheck using length-guard + copying semantics.
 func PerfcheckCopyDecode(p *Perfcheck, src []byte) (err error) {
-	if len(src) < 8*10 {
-		return errors.New("decode Perfcheck: record buffer is too small").
-			Uint64("length-required", uint64(8*10)).
-			Int("length-actual", len(src))
+	// Проверяем, что буфер содержит ровно 80 байт (или хотя бы 80?)
+	if len(src) != 80 {
+		if len(src) < 80 {
+			return errors.New("decode Perfcheck: record buffer is too small").
+				Uint64("length-required", uint64(80)).
+				Int("length-actual", len(src))
+		}
+		return errors.Newf("the buffer still has %d bytes left after decode", len(src)-80).
+			Int("record-bytes-left", len(src)-80)
 	}
 
-	// Decode sequentially with index offset, no slice slicing.
-	var i int
-
-	p.F0 = int64(binary.LittleEndian.Uint64(src[i:]))
-	i += 8
-	p.F1 = int64(binary.LittleEndian.Uint64(src[i:]))
-	i += 8
-	p.F2 = int64(binary.LittleEndian.Uint64(src[i:]))
-	i += 8
-	p.F3 = int64(binary.LittleEndian.Uint64(src[i:]))
-	i += 8
-	p.F4 = int64(binary.LittleEndian.Uint64(src[i:]))
-	i += 8
-	p.F5 = int64(binary.LittleEndian.Uint64(src[i:]))
-	i += 8
-	p.F6 = int64(binary.LittleEndian.Uint64(src[i:]))
-	i += 8
-	p.F7 = int64(binary.LittleEndian.Uint64(src[i:]))
-	i += 8
-	p.F8 = int64(binary.LittleEndian.Uint64(src[i:]))
-	i += 8
-	p.F9 = int64(binary.LittleEndian.Uint64(src[i:]))
-	i += 8
-
-	// Check for trailing bytes.
-	if extra := len(src) - i; extra > 0 {
-		return errors.Newf("the buffer still has %d bytes left after the last argument decoded", extra).
-			Int("record-bytes-left", extra)
-	}
+	// Читаем все поля напрямую по фиксированным смещениям
+	p.F0 = int64(binary.LittleEndian.Uint64(src[0:]))
+	p.F1 = int64(binary.LittleEndian.Uint64(src[8:]))
+	p.F2 = int64(binary.LittleEndian.Uint64(src[16:]))
+	p.F3 = int64(binary.LittleEndian.Uint64(src[24:]))
+	p.F4 = int64(binary.LittleEndian.Uint64(src[32:]))
+	p.F5 = int64(binary.LittleEndian.Uint64(src[40:]))
+	p.F6 = int64(binary.LittleEndian.Uint64(src[48:]))
+	p.F7 = int64(binary.LittleEndian.Uint64(src[56:]))
+	p.F8 = int64(binary.LittleEndian.Uint64(src[64:]))
+	p.F9 = int64(binary.LittleEndian.Uint64(src[72:]))
 
 	return nil
 }

@@ -1,6 +1,6 @@
 module github.com/sirkon/fenneg
 
-go 1.25
+go 1.26
 
 require (
 	github.com/alecthomas/assert/v2 v2.1.0
@@ -8,7 +8,7 @@ require (
 	github.com/facette/natsort v0.0.0-20181210072756-2cd4dd1e2dcb
 	github.com/golang/mock v1.6.0
 	github.com/sirkon/deepequal v0.5.5
-	github.com/sirkon/errors v1.0.0
+	github.com/sirkon/errors v1.1.0
 	github.com/sirkon/gogh v0.24.3
 	github.com/sirkon/intypes v0.1.0
 	github.com/sirkon/jsonexec v0.0.5

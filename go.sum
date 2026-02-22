@@ -39,6 +39,10 @@ github.com/sirkon/deepequal v0.5.5 h1:Qbu9QBosF66nWkmLPoCZhIXlhiVdcQlQ5BOCr66wf/
 github.com/sirkon/deepequal v0.5.5/go.mod h1:PsB4zwW58QHdYwYNdH2PY8Wsq/L++59Okv+pWygOy6U=
 github.com/sirkon/errors v1.0.0 h1:WONUn4CTrinYngfxgWiCdT4UQjs2xTKwK9gLokXUpik=
 github.com/sirkon/errors v1.0.0/go.mod h1:jeAOfe0x9Wz6m4AMPBdGB95efTXILTTr9ikZ2ymb5zA=
+github.com/sirkon/errors v1.1.0 h1:rydLBM0TL4okCR++GkeT3DGuAZwBpg7yiwJFnJjF3C0=
+github.com/sirkon/errors v1.1.0/go.mod h1:jeAOfe0x9Wz6m4AMPBdGB95efTXILTTr9ikZ2ymb5zA=
+github.com/sirkon/errors v1.2.5 h1:Rw9ScF+jJbRnNgfTM+JB5CwayXBY7lSlU4+bwUxuL64=
+github.com/sirkon/errors v1.2.5/go.mod h1:hMWGhjRN0rLRVjyfEidhSVkQY6O9ylpYb8TgVHn4prI=
 github.com/sirkon/go-format v0.1.2 h1:rv/Gp5qXmNrSaqm6ygxXEdDOuMpGYbcW+QScHpGgWxk=
 github.com/sirkon/go-format v0.1.2/go.mod h1:qaECyMww07bEcWjztGZ2vj1LT7mmp0KJRMZRYci9JUw=
 github.com/sirkon/go-format/v2 v2.0.2 h1:56wiEBVsuAn44obNIxF9wvvCfQgdJc3baf4ogl1MVRs=
