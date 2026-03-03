@@ -6,11 +6,10 @@ import (
 	"go/types"
 
 	"github.com/sirkon/errors"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
-
 	"github.com/sirkon/fenneg/internal/handlers"
 	"github.com/sirkon/fenneg/internal/tdetect"
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 var builtinSupport = map[string]func() TypeHandler{}
@@ -292,6 +291,26 @@ func init() {
 			default:
 				panic(fmt.Sprintf("type intypes.%s is not supported", v.Obj().Name()))
 			}
+		},
+
+		func(p types.Type) TypeHandler {
+			v, ok := p.(*types.Named)
+			if !ok {
+				return nil
+			}
+
+			if v.Obj().Pkg().Path() != "time" {
+				return nil
+			}
+
+			switch v.Obj().Name() {
+			case "Time":
+				return &handlers.Time{}
+			case "Duration":
+				return &handlers.Duration{}
+			}
+
+			return nil
 		},
 
 		// byte arrays

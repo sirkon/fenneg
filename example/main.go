@@ -4,9 +4,8 @@ import (
 	"go/types"
 
 	"github.com/sirkon/errors"
-	"github.com/sirkon/message"
-
 	"github.com/sirkon/fenneg"
+	"github.com/sirkon/message"
 )
 
 const examplePkg = "github.com/sirkon/fenneg/example/internal/example"
@@ -41,6 +40,30 @@ func main() {
 				return NewHandlerIndex(t)
 			},
 		),
+		fenneg.NewTypeHandler(
+			func(ot types.Type) fenneg.TypeHandler {
+				var t *types.Named
+
+				if v, ok := ot.(*types.Pointer); ok {
+					ot = v.Elem()
+				}
+
+				t, ok := ot.(*types.Named)
+				if !ok {
+					return nil
+				}
+
+				if t.Obj().Pkg().Path() != examplePkg {
+					return nil
+				}
+
+				if t.Obj().Name() != "Location" {
+					return nil
+				}
+
+				return &LocationHandler{}
+			},
+		),
 	)
 	if err != nil {
 		message.Critical(errors.Wrap(err, "set up type handlers"))
@@ -66,5 +89,8 @@ func main() {
 	}
 	if err := r.Struct(examplePkg, "Perfcheck"); err != nil {
 		message.Critical(errors.Wrap(err, "process Perfcheck struct"))
+	}
+	if err := r.Struct(examplePkg, "Blog"); err != nil {
+		message.Critical(errors.Wrap(err, "process Blog struct"))
 	}
 }
